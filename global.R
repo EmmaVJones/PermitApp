@@ -3,7 +3,7 @@ library(mapview)
 library(sp)
 library(shinyBS)
 library(dplyr)
-library(ggmap)
+library(shinyFiles)
 
 
 gageInfo <- readRDS('data/gageInfo.RDS')
