@@ -7,27 +7,33 @@ shinyServer(function(input, output, session) {
   
   ## Map ## Went with leaflet in the end over mapview
   output$GageMap <- renderLeaflet({
-    leaflet()%>%addProviderTiles('Thunderforest.Landscape')%>%addMouseCoordinates()%>%
-      addHomeButton(extent(gageInfo), "Virginia Gages")%>%
-      addCircleMarkers(data=gageInfo,radius=6,color=~'blue',stroke=F,
-                      fillOpacity=0.5,group='gages',layerId=~GageNo,
-                 popup=popupTable(gageInfo, zcol = c("GageNo","StationName","DrainArea",
-                                                     "HUC8","WebAddress")))
+    if(input$targetlocation==""){
+      leaflet()%>%addProviderTiles('Thunderforest.Landscape')%>%addMouseCoordinates()%>%
+        addHomeButton(extent(gageInfo), "Virginia Gages")%>%
+        addCircleMarkers(data=gageInfo,radius=6,color=~'blue',stroke=F,
+                         fillOpacity=0.5,group='gages',layerId=~GageNo,
+                         popup=popupTable(gageInfo, zcol = c("GageNo","StationName","DrainArea",
+                                                             "HUC8","WebAddress")))}
+    else{
+      target_pos = geocode(input$targetlocation)
+
+      leaflet()%>%addProviderTiles('Thunderforest.Landscape')%>%addMouseCoordinates()%>%
+        setView(lng=target_pos$lon,lat=target_pos$lat,zoom=10)%>%
+        #addHomeButton(extent(gageInfo), "Virginia Gages")%>%
+        addCircleMarkers(data=gageInfo,radius=6,color=~'blue',stroke=F,
+                         fillOpacity=0.5,group='gages',layerId=~GageNo,
+                         popup=popupTable(gageInfo, zcol = c("GageNo","StationName","DrainArea",
+                                                             "HUC8","WebAddress")))
+        
+    }
+    
   })
   #output$GageMap <- renderMapview({
     #mapview(gageInfo, popup = popupTable(gageInfo, zcol = c("GageNo","StationName",
     #                                                        "DrainArea","HUC8","WebAddress")))})
   
-  
-  ## Zoom Button ## broken for now 
-  eventReactive(input$zoomButton,{
-    #zoompoint <- 'userpoint'
-    #coordinates(zoompoint) <- ~input$long+input$lat
-    #proj4string(zoompoint) <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")                                 
-    #mapview(zoompoint)
-    leafletProxy({'GageMap'})%>%setView(input$long,input$lat,zoom=5)
-  })
-  
+  output$test <- renderPrint({input$targetlocation})
+
   
   ## Move map view to adjust with marker click ##
   observeEvent(input$GageMap_marker_click,{
@@ -48,10 +54,11 @@ shinyServer(function(input, output, session) {
   observeEvent(input$GageMap_marker_click,{
     click<-input$GageMap_marker_click
     if(!is.null(click$id))
-      output$gageText <- renderPrint({paste('Gage Number:',click$id)})
+      output$gageText <- renderPrint({cat('Gage Number:',click$id)})
+    # use cat() instead of paste() to not show line numbers
   })
   
-  output$gageInfoTable <- renderTable({
+  userGageSelection <- reactive({
     if(is.null(input$gageList))
       return(NULL)
     d <- subset(gageInfo@data,GageNo %in% input$gageList)
@@ -59,7 +66,25 @@ shinyServer(function(input, output, session) {
     return(d[1:4,1:4])
   })
   
+  output$gageInfoTable <- renderTable({
+    if(is.null(userGageSelection()))
+      NULL
+    return(userGageSelection())
+  })
   
+  #output$test <- renderPrint({as.character(userGageSelection()[,1])})
+  
+  extraStats <- reactive({
+    subset(gagestats,SITEID %in% as.character(userGageSelection()[,1])) %>%
+      dplyr::select(SITEID:HARMEAN) # bc raster package is loaded
+  })
+  
+  
+  output$gageInfoTable2 <- renderTable({
+    if(is.null(extraStats()))
+      NULL
+    return(extraStats())
+    })
   
   
 })
