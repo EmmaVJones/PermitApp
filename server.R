@@ -1,5 +1,10 @@
 source('global.R')
 
+# Upload GIS data here to avoid uploading it twice (if it were in the global.R file)
+Ecoregions <- readOGR('data/','vaECOREGIONlevel3__proj84')
+Superbasins <- readOGR('data/','VAsuperbasins_proj84')
+
+
 
 shinyServer(function(input, output, session) {
   activeDot <- function(map,x,y){addCircleMarkers(map,x,y,radius=6,color='blue',fillColor = 'yellow',
@@ -85,6 +90,34 @@ shinyServer(function(input, output, session) {
       NULL
     return(extraStats())
     })
+  
+  
+  
+  
+  
+  
+  ## Background Metals Weighted (Probmon Data) Section
+  output$weightedMap <- renderLeaflet({
+    leaflet(VAstationselect) %>% addProviderTiles('Thunderforest.Landscape') %>%
+      fitBounds(~min(Longitude),~min(Latitude),~max(Longitude),~max(Latitude))%>%
+      addMarkers(~Longitude,~Latitude,popup=~StationID,markerOptions(riseOnHover=T))
+      
+  })
+ 
+  
+  
+  
+  
+  
+  
+  ## Background Metals UNweighted (all data) Section
+  
+  output$unweightedMap <- renderMapview({
+    mapview( Ecoregions, zcol="US_L3NAME")+# popup = popupTable( eco2 , zcol = c("US_L3NAME")))+
+      mapview(Superbasins,zcol="SUPERBASIN")#popup= popupTable( supaB2 , zcol = c("SUPERBASIN")))
+    
+    })
+  
   
   
 })

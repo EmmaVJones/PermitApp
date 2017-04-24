@@ -5,6 +5,8 @@ library(shinyBS)
 library(dplyr)
 library(shinyFiles)
 library(ggmap)
+library(rgdal)
+library(htmltools)
 
 
 
@@ -17,4 +19,9 @@ gagestats <- read.csv('data/allflowstatsComparison.csv')
 gagestats$SITEID <- paste0("0",gagestats$SITEID)
 
 
+# Prob metals data
+metalsCDF <- readRDS('data/metalsCDF_March2017Update.RDS')
 
+
+# Bring in Virginia point data
+VAstationselect <- readRDS('data/VAstationselectMarch2017update_final.RDS')
