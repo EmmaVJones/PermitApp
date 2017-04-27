@@ -135,7 +135,7 @@ shinyServer(function(input, output, session) {
   observe({
     if(is.null(metalsCDF_DataSelect()))
       return(NULL)
-    pal <- colorQuantile("Reds", metalsCDF_DataSelect()$Value,n=4)
+    pal <- colorQuantile(c("#FDFEC5","#FEAF56","#FF4A31","#830025"), metalsCDF_DataSelect()$Value,n=4)
     
     leafletProxy('weightedMap',data=metalsSites_DataSelect()) %>% clearMarkers() %>%
       clearControls() %>%
@@ -147,7 +147,7 @@ shinyServer(function(input, output, session) {
                                    paste(capwords(tolower(metalsSites_DataSelect()$metal)),":",
                                    metalsSites_DataSelect()$metal_value,
                                    unique(metalsCDF_DataSelect()$units),sep=" ")))%>%
-      addLegend("bottomright",pal=pal,values=~metal_value,
+      addLegend("bottomright",pal=pal,values=~metalsCDF_DataSelect()$Value,
                 title=paste(input$metalToPlot),opacity=1)
   })
   

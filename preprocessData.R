@@ -9,6 +9,9 @@ metalsCDF <- readRDS('data/metalsCDF_March2017Update.RDS')
 metalsCDF$Indicator <- gsub("CALCUIM","CALCIUM",metalsCDF$Indicator)
 metalsCDF$Indicator <- gsub("BERY","BERYLLIUM",metalsCDF$Indicator)
 metalsCDF$Indicator <- gsub("MAGN", "MAGNESIUM",metalsCDF$Indicator)
+metalsCDF$Subpopulation <- gsub("Rappahanock", "Rappahannock",metalsCDF$Subpopulation)
+metalsCDF$Subpopulation <- gsub("James Basin", "James",metalsCDF$Subpopulation)
+metalsCDF$Subpopulation <- gsub("Roanoke Basin", "Roanoke",metalsCDF$Subpopulation)
 metalsCDF <- filter(metalsCDF,!(Subpopulation %in% c("Bay Watersheds 2001-2007","Bay Watersheds 2008-2014",
                                                     "IR2008","IR2010","IR2012","IR2014","IR2016",
                                                     "Non-Bay Watersheds 2001-2007","Non-Bay Watersheds 2008-2014",
