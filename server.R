@@ -125,12 +125,38 @@ shinyServer(function(input, output, session) {
    })
   
   
-  popsummary <- reactive({
+  popsummaryVA <- reactive({
     if(is.null(metalsCDF_DataSelect()))
       return(NULL)
-    populationSummary(metalsCDF_DataSelect())
+    populationSummary(metalsCDF_DataSelect(),input$metalToPlot,"Virginia")
   })
-   
+  popsummarybasin <- reactive({
+    if(is.null(metalsCDF_DataSelect())&input$basin!="")
+      return(NULL)
+    populationSummary(metalsCDF_DataSelect(),input$metalToPlot,input$basin)
+  })
+  popsummarysuperBasin <- reactive({
+    if(is.null(metalsCDF_DataSelect())&input$superBasin!="")
+      return(NULL)
+    populationSummary(metalsCDF_DataSelect(),input$metalToPlot,input$superBasin)
+  })
+  popsummaryeco <- reactive({
+    if(is.null(metalsCDF_DataSelect())&input$ecoregion!="")
+      return(NULL)
+    populationSummary(metalsCDF_DataSelect(),input$metalToPlot,input$ecoregion)
+  })
+  popsummaryorder <- reactive({
+    if(is.null(metalsCDF_DataSelect())&input$order!="")
+      return(NULL)
+    populationSummary(metalsCDF_DataSelect(),input$metalToPlot,input$order)
+  })
+  
+  #popsummaryALL <- reactive({
+  #  if(is.null(metalsCDF_DataSelect()))
+  #    return(NULL)
+  #  if(input$basin)
+    # use isolate to interactively add rows
+  #})
   # Add markers to map based on user selection #
   observe({
     if(is.null(metalsCDF_DataSelect()))
@@ -155,27 +181,14 @@ shinyServer(function(input, output, session) {
   
   # Summary table of input dataset #
   output$weightedMetalsTable <- DT::renderDataTable({
-    if(is.null(popsummary()))
+    if(is.null(popsummaryVA()))
       return(NULL)
-    datatable(popsummary(),
-              colnames=c('n','5%','10%','25%','50%','75%','90%','95%'),
+    datatable(popsummaryVA(),
+              colnames=c('Metal','Subpopulation','n','5%','10%','25%','50%','75%','90%','95%'),
               extensions = 'Buttons', escape=F, rownames = F,
               options=list(dom='Bt',
                            buttons=list('copy')))
   })
-  
-  
-  # Test outputs, to delete later
-  output$test <- renderPrint({if(is.null(popsummary()))
-    return(NULL)
-    
-    previewColors(colorQuantile("Reds", metalsCDF_DataSelect()$Value,n=4),
-                  sort(metalsSites_DataSelect()$metal_value))})
-    #tdf<- as.data.frame(t(metalsCDF_DataSelect()),row.names=1:8)
-  #return(tdf[2:8,])})
-  output$test2 <- renderTable({metalsCDF_DataSelect()})
-  #output$test3 <- renderPrint({input$subpopToPlot})
-  output$test4 <- renderTable({metalsSites_DataSelect()})
   
   
   

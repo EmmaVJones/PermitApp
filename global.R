@@ -82,11 +82,12 @@ vlookup <- function(ref, #the value or values that you want to look for
 
 
 ## Summarize input population, from cdf dataset so can't use summary()
-populationSummary <- function(dataset){
+populationSummary <- function(dataset,metal,subpopulation){
   # need dataset in particular format to search the right column with VLOOKUP hack
   dataset2 <- select(dataset,Estimate.P,Value)
   
-  stats <- data.frame(n=max(dataset$NResp),x5=vlookup(5,dataset2,2,range=T),
+  stats <- data.frame(Metal=metal,Subpopulation=subpopulation,
+                      n=max(dataset$NResp),x5=vlookup(5,dataset2,2,range=T),
                       x10=vlookup(10,dataset2,2,range=T),x25=vlookup(25,dataset2,2,range=T),
                       x50=vlookup(50,dataset2,2,range=T),x75=vlookup(75,dataset2,2,range=T),
                       x90=vlookup(90,dataset2,2,range=T),x95=vlookup(95,dataset2,2,range=T))

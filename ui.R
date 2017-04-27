@@ -13,50 +13,58 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                                              thus results from this page represent statistically valid weighted estimates of measurements 
                                                                              statewide.'))),
                                                                    leafletOutput("weightedMap"),#, width="75%", height="100%"),
-                                                                   absolutePanel(top=140, left=60, draggable = F,bottom="auto",height=100,width=200,
-                                                                                 selectInput('metalToPlot',label=strong('Choose a metal to display'),
+                                                                   absolutePanel(top=150, left=60, draggable = F,bottom="auto",height=100,width=150,
+                                                                                 selectInput('metalToPlot',label=strong('Choose a Metal'),
                                                                                              choices=c("No Metals",capwords(tolower(levels(metalsCDF$Indicator))))),
                                                                                  conditionalPanel("input.metalToPlot !== null && input.metalToPlot !=='No Metals'",
-                                                                                                  selectInput('subpopToPlot',label=strong('Choose a Population to display'),
+                                                                                                  selectInput('subpopToPlot',label=strong('Choose a Population'),
                                                                                                               choices=list(`All` = c("Virginia"),
                                                                                                                            `Ecoregion` = c("Blue Ridge Mountains",
                                                                                                                                            "Central Appalachian Ridges and Valleys",
                                                                                                                                            "Central Appalachians",
                                                                                                                                            "Northern Piedmont",
                                                                                                                                            "Piedmont","Southeastern Plains"),
-                                                                                                                           `SuperHUC` = c("Clinch-Powell","Potomac-Shenandoah",
+                                                                                                                           `SuperBasin` = c("Clinch-Powell","Potomac-Shenandoah",
                                                                                                                                           "Rappahannock-York","Tennessee"),
                                                                                                                            `Basin` = c("Big Sandy","Chowan","Holston","James",
                                                                                                                                        "New","Potomac","Rappahannock","Roanoke",
                                                                                                                                        "Shenandoah","York"),
                                                                                                                            `Order` = c( "First Order","Second Order","Third Order",
-                                                                                                                                        "Fourth Order","Fifth Order"))))
-                                                                                 #verbatimTextOutput('test'),
-                                                                                 #verbatimTextOutput('test3')
-                                                                                 ),
-                                                                   column(11,
-                                                                          h5('Instructions:'),
+                                                                                                                                        "Fourth Order","Fifth Order"))))),
+                                                                   #absolutePanel(top=150, left=225, draggable = F,bottom="auto",height=50,width=175,
+                                                                  #               textInput('targetlocationUnweighted',strong("Search by Location"),placeholder="Example: 37.5, -79.0")),
+                                                                   fluidRow(
+                                                                     column(8,style='padding:0px 0px 0px 30px;',
+                                                                          h5(strong('Instructions:')),
                                                                           p("Use this section to help analyze background metals data for inclusion in forthcoming faciliy permit. 
-                                                                            Type the facility's",strong("latitude")," and ",strong("longitude")," into the input box to add a marker 
-                                                                            to the map at the permit location. Use the drop down on the map to adjust the metal plotted on the map. 
-                                                                            You can click markers to find out more information about each data point. Then review the associated 
-                                                                            summary statistics table and cdf curve."),
-                                                                          fluidRow(
-                                                                            column(6,h4("Statistical Summary"),
-                                                                                   DT::dataTableOutput('weightedMetalsTable'),
-                                                                                   tableOutput('tdf'),
-                                                                                   p("popsummary"),
-                                                                                   verbatimTextOutput('test'),
-                                                                                   p("metalsCDF_DataSelect()"),
-                                                                                   tableOutput('test2'),
-                                                                                   tableOutput('test4')
-                                                                                   ),
-                                                                            column(3,
-                                                                                   plotOutput("p_dMetal"),
-                                                                                   plotOutput('weightedMetalsCDF')))
-                                                                          )
-                                                                   
-                                                                   ))),
+                                                                            Use the drop down on the map to adjust the metal and subpopulation plotted on the map. You can click markers 
+                                                                            to find out more information about each data point. Then review the associated summary statistics table and 
+                                                                            cdf curve. You can specify multiple subpopulations below to review different statistical summaries all at 
+                                                                            once and copy or download them for future use.")),
+                                                                          column(3,
+                                                                                 h5('CDF Curve')
+                                                                                 #plotOutput("p_dMetal"),
+                                                                                 #plotOutput('weightedMetalsCDF'))
+                                                                                 )),
+                                                                   column(12,
+                                                                          h5(strong("Statistical Summary")),
+                                                                          fluidRow(column(3,selectInput('basin',"Choose a Basin",
+                                                                                                        choices = c("","Big Sandy","Chowan","Holston","James","New",
+                                                                                                                    "Potomac","Rappahannock","Roanoke","Shenandoah","York"))),
+                                                                                   column(3,selectInput('superBasin','Choose a SuperBasin',
+                                                                                                        choices = c("","Clinch-Powell","Potomac-Shenandoah",
+                                                                                                                    "Rappahannock-York","Tennessee"))),
+                                                                                   column(3,selectInput('ecoregion',"Choose an Ecoregion",
+                                                                                                        choices = c("","Blue Ridge Mountains",
+                                                                                                                    "Central Appalachian Ridges and Valleys",
+                                                                                                                    "Central Appalachians","Northern Piedmont","Piedmont",
+                                                                                                                    "Southeastern Plains"))),
+                                                                                   column(3,selectInput('order','Choose a Stream Order',
+                                                                                                        choices=c("","First Order","Second Order",
+                                                                                                                  "Third Order","Fourth Order","Fifth Order")))
+                                                                          )),
+                                                                   DT::dataTableOutput('weightedMetalsTable'))
+                                                               )),
                                         tabPanel("Targeted Monitoring (Unweighted) Data",
                                                  bootstrapPage(div(class="outer",
                                                                    tags$style(type ="text/css",".outer {position: fixed; top: 75px; left: 0; right: 0; bottom: 0; overflow-y: scroll; padding: 0}"),
