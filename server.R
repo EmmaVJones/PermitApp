@@ -1,8 +1,8 @@
 source('global.R')
 
 # Upload GIS data here to avoid uploading it twice (if it were in the global.R file)
-Ecoregions <- readOGR('data/','vaECOREGIONlevel3__proj84')
-Superbasins <- readOGR('data/','VAsuperbasins_proj84')
+#Ecoregions <- readOGR('C:/HardDriveBackup/R/PermitTool/PermitApp/data','vaECOREGIONlevel3__proj84')
+#Superbasins <- readOGR('C:/HardDriveBackup/R/PermitTool/PermitApp/data','VAsuperbasins_proj84')
 
 
 
@@ -95,15 +95,129 @@ shinyServer(function(input, output, session) {
   
   
   
-  
-  ## Background Metals Weighted (Probmon Data) Section
+  #-------------------------------------------------------------------------------------------
+  ## Background Metals Weighted (Probmon Data) Section ##
+  #-------------------------------------------------------------------------------------------
   output$weightedMap <- renderLeaflet({
-    leaflet(VAstationselect) %>% addProviderTiles('Thunderforest.Landscape') %>%
-      fitBounds(~min(Longitude),~min(Latitude),~max(Longitude),~max(Latitude))%>%
-      addMarkers(~Longitude,~Latitude,popup=~StationID,markerOptions(riseOnHover=T))
-      
+    leaflet(metalsSites) %>% addProviderTiles('Thunderforest.Landscape') %>%
+      fitBounds(~min(LongitudeDD),~min(LatitudeDD),~max(LongitudeDD),~max(LatitudeDD))%>%
+      #fitBounds(metalsSites1@bbox)
+      addMouseCoordinates()%>%addHomeButton(extent(metalsSites1), "Virginia")
   })
- 
+  
+  # Subset metals CDF data based on user metal and subpopulation #
+  metalsCDF_DataSelect <- reactive({
+    if(input$metalToPlot=="No Metals")
+      return(NULL)
+    df <- filter(metalsCDF,Indicator==toupper(input$metalToPlot))
+    if(input$subpopToPlot=="Virginia"){
+      return(filter(df,Subpopulation=="Virginia"))}else{return(filter(df,Subpopulation==input$subpopToPlot))}
+  })
+  
+  # Subset metals sites based on user metal and subpopulation #
+  metalsSites_DataSelect <- reactive({
+    if(is.null(metalsCDF_DataSelect()))
+      return(NULL)
+    df <- filter(metalsSites_long,metal==toupper(input$metalToPlot))
+    if(input$subpopToPlot=="Virginia")
+      return(filter(df,category=='Basin'))
+    return(filter(df,Subpopulation==input$subpopToPlot))
+   })
+  
+  
+  popsummary <- reactive({
+    if(is.null(metalsCDF_DataSelect()))
+      return(NULL)
+    populationSummary(metalsCDF_DataSelect())
+  })
+   
+  # Add markers to map based on user selection #
+  observe({
+    if(is.null(metalsCDF_DataSelect()))
+      return(NULL)
+    pal <- colorQuantile("Reds", metalsCDF_DataSelect()$Value,n=4)
+    
+    leafletProxy('weightedMap',data=metalsSites_DataSelect()) %>% clearMarkers() %>%
+      clearControls() %>%
+      addCircleMarkers(data=metalsSites_DataSelect(),~LongitudeDD,~LatitudeDD,radius=6,
+                       #color=~'blue',
+                       color=~pal(metal_value),stroke=F,fillOpacity=0.5,
+                       group='selectedSites',layerId=~StationID_Trend,
+                       popup=paste(sep= "<br/>",metalsSites_DataSelect()$StationID,
+                                   paste(capwords(tolower(metalsSites_DataSelect()$metal)),":",
+                                   metalsSites_DataSelect()$metal_value,
+                                   unique(metalsCDF_DataSelect()$units),sep=" ")))%>%
+      addLegend("bottomright",pal=pal,values=~metal_value,
+                title=paste(input$metalToPlot),opacity=1)
+  })
+  
+  
+  
+  # Summary table of input dataset #
+  output$weightedMetalsTable <- DT::renderDataTable({
+    if(is.null(popsummary()))
+      return(NULL)
+    datatable(popsummary(),
+              colnames=c('n','5%','10%','25%','50%','75%','90%','95%'),
+              extensions = 'Buttons', escape=F, rownames = F,
+              options=list(dom='Bt',
+                           buttons=list('copy')))
+  })
+  
+  
+  # Test outputs, to delete later
+  output$test <- renderPrint({if(is.null(popsummary()))
+    return(NULL)
+    
+    previewColors(colorQuantile("Reds", metalsCDF_DataSelect()$Value,n=4),
+                  sort(metalsSites_DataSelect()$metal_value))})
+    #tdf<- as.data.frame(t(metalsCDF_DataSelect()),row.names=1:8)
+  #return(tdf[2:8,])})
+  output$test2 <- renderTable({metalsCDF_DataSelect()})
+  #output$test3 <- renderPrint({input$subpopToPlot})
+  output$test4 <- renderTable({metalsSites_DataSelect()})
+  
+  
+  
+  
+  # Updating dissolved metals cdf plot
+  #output$p_dMetal <- renderPlot({
+  #  if(is.null(metalsCDF_DataSelect()))
+  #    return(NULL)
+  #  m <- max(metalsCDF_DataSelect()$NResp)
+  #  
+  #  p1 <- ggplot(metalsCDF_DataSelect(), aes(x=Value,y=Estimate.P)) + geom_point() + labs(x=as.character(pct1[1,1]),y="Percentile") +
+  #    ggtitle(paste("Virginia",input$dMetal_,"\nPercentile Graph( n=",m,")",sep=" ")) + 
+  #    theme(plot.title = element_text(hjust=0.5,face='bold',size=15)) +
+  #    theme(axis.title = element_text(face='bold',size=12))+
+  #    geom_point(data=pct,color='orange',size=4)
+    
+    
+    
+  #  parametercap <- toupper(input$dMetal_)
+  #  cdfsubset <- subFunction(cdfdata,parametercap,"Virginia")
+  #  pct1 <- cbind(percentilesDissolvedMetals(),metal=sub(" .*","",percentilesDissolvedMetals()$Dissolved_Metal))%>%
+  #    filter(metal==input$dMetal_)
+  #  pct <- cbind(cdfsubset[1,1:3],Value=pct1$Measure,Estimate.P=as.numeric(as.character(pct1$Statewide_Percentile)),
+  #               cdfsubset[1,6:8])
+  #  #pct <- filter(cdfsubset,Value==pct1[,2])
+  #  m <- max(cdfsubset$NResp)
+  #  p1 <- ggplot(cdfsubset, aes(x=Value,y=Estimate.P)) + geom_point() + labs(x=as.character(pct1[1,1]),y="Percentile") +
+  #    ggtitle(paste("Virginia",input$dMetal_,"\nPercentile Graph( n=",m,")",sep=" ")) + 
+  #    theme(plot.title = element_text(hjust=0.5,face='bold',size=15)) +
+  #    theme(axis.title = element_text(face='bold',size=12))+
+  #    geom_point(data=pct,color='orange',size=4)
+  #  
+  #  std <- cbind(percentilesDissolvedMetals2()[,c(1,4)],metal=sub(" .*","",percentilesDissolvedMetals()$Dissolved_Metal))%>%
+  #    filter(metal==input$dMetal_)
+  #  
+    
+  #  if(input$addstd==F){return(p1)}else{
+  #    if(is.na(std[1,2])){
+  #      xloc <- 0.75*max(cdfsubset$Value)
+  #      p1+annotate('text',x=xloc,y=50,label='No Criteria',color='red', fontface =2)}else{
+  #        p1+geom_vline(xintercept=as.numeric(as.character(std[1,2])),color='red',linetype='dashed')}
+  #  }},height = 250,width=325)
   
   
   
@@ -112,11 +226,11 @@ shinyServer(function(input, output, session) {
   
   ## Background Metals UNweighted (all data) Section
   
-  output$unweightedMap <- renderMapview({
-    mapview( Ecoregions, zcol="US_L3NAME")+# popup = popupTable( eco2 , zcol = c("US_L3NAME")))+
-      mapview(Superbasins,zcol="SUPERBASIN")#popup= popupTable( supaB2 , zcol = c("SUPERBASIN")))
-    
-    })
+  #output$unweightedMap <- renderMapview({
+  #  mapview( Ecoregions, zcol="US_L3NAME")+# popup = popupTable( eco2 , zcol = c("US_L3NAME")))+
+  #    mapview(Superbasins,zcol="SUPERBASIN")#popup= popupTable( supaB2 , zcol = c("SUPERBASIN")))
+  #  
+  #  })
   
   
   
