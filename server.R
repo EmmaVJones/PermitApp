@@ -215,44 +215,21 @@ shinyServer(function(input, output, session) {
   
   
   # Updating dissolved metals cdf plot
-  #output$p_dMetal <- renderPlot({
-  #  if(is.null(metalsCDF_DataSelect()))
-  #    return(NULL)
-  #  m <- max(metalsCDF_DataSelect()$NResp)
-  #  
-  #  p1 <- ggplot(metalsCDF_DataSelect(), aes(x=Value,y=Estimate.P)) + geom_point() + labs(x=as.character(pct1[1,1]),y="Percentile") +
-  #    ggtitle(paste("Virginia",input$dMetal_,"\nPercentile Graph( n=",m,")",sep=" ")) + 
-  #    theme(plot.title = element_text(hjust=0.5,face='bold',size=15)) +
-  #    theme(axis.title = element_text(face='bold',size=12))+
-  #    geom_point(data=pct,color='orange',size=4)
+  output$weightedMetalsCDF <- renderPlot({
+    if(is.null(metalsCDF_DataSelect()))
+      return(NULL)
+    m <- max(metalsCDF_DataSelect()$NResp)
+    xaxis <- as.character(paste(capwords(tolower(metalsCDF_DataSelect()$Indicator[1])),' (',metalsCDF_DataSelect()$units[1],')'))
+    p1 <- ggplot(metalsCDF_DataSelect(), aes(x=Value,y=Estimate.P)) + geom_point() + labs(x=xaxis,y="Percentile") +
+      ggtitle(as.character(paste(capwords(tolower(metalsCDF_DataSelect()$Indicator[1])),'in \n',
+                                 metalsCDF_DataSelect()$Subpopulation[1],'\n (n=',m,')'))) + 
+      theme(plot.title = element_text(hjust=0.5,face='bold',size=15)) +
+      theme(axis.title = element_text(face='bold',size=12))+ 
+      geom_ribbon(data=metalsCDF_DataSelect(),aes(ymin=LCB95Pct.P,ymax=UCB95Pct.P),alpha=0.3)
+      
     
-    
-    
-  #  parametercap <- toupper(input$dMetal_)
-  #  cdfsubset <- subFunction(cdfdata,parametercap,"Virginia")
-  #  pct1 <- cbind(percentilesDissolvedMetals(),metal=sub(" .*","",percentilesDissolvedMetals()$Dissolved_Metal))%>%
-  #    filter(metal==input$dMetal_)
-  #  pct <- cbind(cdfsubset[1,1:3],Value=pct1$Measure,Estimate.P=as.numeric(as.character(pct1$Statewide_Percentile)),
-  #               cdfsubset[1,6:8])
-  #  #pct <- filter(cdfsubset,Value==pct1[,2])
-  #  m <- max(cdfsubset$NResp)
-  #  p1 <- ggplot(cdfsubset, aes(x=Value,y=Estimate.P)) + geom_point() + labs(x=as.character(pct1[1,1]),y="Percentile") +
-  #    ggtitle(paste("Virginia",input$dMetal_,"\nPercentile Graph( n=",m,")",sep=" ")) + 
-  #    theme(plot.title = element_text(hjust=0.5,face='bold',size=15)) +
-  #    theme(axis.title = element_text(face='bold',size=12))+
-  #    geom_point(data=pct,color='orange',size=4)
-  #  
-  #  std <- cbind(percentilesDissolvedMetals2()[,c(1,4)],metal=sub(" .*","",percentilesDissolvedMetals()$Dissolved_Metal))%>%
-  #    filter(metal==input$dMetal_)
-  #  
-    
-  #  if(input$addstd==F){return(p1)}else{
-  #    if(is.na(std[1,2])){
-  #      xloc <- 0.75*max(cdfsubset$Value)
-  #      p1+annotate('text',x=xloc,y=50,label='No Criteria',color='red', fontface =2)}else{
-  #        p1+geom_vline(xintercept=as.numeric(as.character(std[1,2])),color='red',linetype='dashed')}
-  #  }},height = 250,width=325)
-  
+    p1
+    })
   
   
   

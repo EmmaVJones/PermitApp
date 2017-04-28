@@ -34,19 +34,18 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                                    #absolutePanel(top=150, left=225, draggable = F,bottom="auto",height=50,width=175,
                                                                   #               textInput('targetlocationUnweighted',strong("Search by Location"),placeholder="Example: 37.5, -79.0")),
                                                                    fluidRow(
-                                                                     column(8,style='padding:0px 0px 0px 30px;',
+                                                                     column(7,style='padding:0px 0px 0px 30px;',
                                                                           h5(strong('Instructions:')),
                                                                           p("Use this section to help analyze background metals data for inclusion in forthcoming faciliy permit. 
                                                                             Use the drop down on the map to adjust the metal and subpopulation plotted on the map. You can click markers 
                                                                             to find out more information about each data point. Then review the associated summary statistics table and 
                                                                             cdf curve. You can specify multiple subpopulations below to review different statistical summaries all at 
                                                                             once and copy or download them for future use.")),
-                                                                          column(3,
-                                                                                 h5('CDF Curve'),
-                                                                                 verbatimTextOutput('test')
+                                                                          column(5,
+                                                                                 h5(strong('CDF Curve')),
                                                                                  #plotOutput("p_dMetal"),
-                                                                                 #plotOutput('weightedMetalsCDF'))
-                                                                                 )),
+                                                                                 plotOutput('weightedMetalsCDF'))
+                                                                                 ),
                                                                    column(12,
                                                                           h5(strong("Statistical Summary")),
                                                                           fluidRow(column(3,selectInput('basin',"Choose a Basin",
@@ -64,8 +63,7 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                                                                         choices=c("-","First Order","Second Order",
                                                                                                                   "Third Order","Fourth Order","Fifth Order")))
                                                                           )),
-                                                                  tableOutput('simpletable'),
-                                                                   DT::dataTableOutput('weightedMetalsTable'))
+                                                                  DT::dataTableOutput('weightedMetalsTable'))
                                                                )),
                                         tabPanel("Targeted Monitoring (Unweighted) Data",
                                                  bootstrapPage(div(class="outer",
