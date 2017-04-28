@@ -37,6 +37,8 @@ proj4string(metalsSites1) <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs
 metalsSites_long <- readRDS('data/MetalsSites_long.RDS')
 
 
+allstatsdata <- readRDS('data/allstatsdata.RDS')
+
 
 ## Functions
 
@@ -93,3 +95,4 @@ populationSummary <- function(dataset,metal,subpopulation){
                       x90=vlookup(90,dataset2,2,range=T),x95=vlookup(95,dataset2,2,range=T))
   return(stats)
 }
+

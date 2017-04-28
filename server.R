@@ -196,8 +196,6 @@ shinyServer(function(input, output, session) {
                 title=paste(input$metalToPlot),opacity=1)
   })
   
-  
-  
   # Summary table of input dataset #
   output$weightedMetalsTable <- DT::renderDataTable({
     if(is.null(popsummaryALL()))
@@ -208,8 +206,22 @@ shinyServer(function(input, output, session) {
               options=list(dom='Bt',
                            buttons=list('copy',
                            list(extend='csv',filename=paste('BackgroundMetals_',input$metalToPlot,Sys.Date(),sep='')),
-                           list(extend='excel',filename=paste('BackgroundMetals_',input$metalToPlot,Sys.Date(),sep='')))))
-  })                         
+                           list(extend='excel',filename=paste('BackgroundMetals_',input$metalToPlot,Sys.Date(),sep='')))))})                         
+  
+  # All Stats Summary table #
+  allstats <- reactive({
+    subset(allstatsdata,Subpopulation %in% c("Virginia",input$basin,input$superBasin,
+                                             input$ecoregion,input$order))
+    
+  })
+  
+  output$allstatstable <- DT::renderDataTable({
+    if(is.null(allstats()))
+      return(NULL)
+    datatable(allstats()[1:10,1:7],rownames = F,
+              colnames=c('Metal','Subpopulation','n','5%','10%','25%','50%'),
+              options=list(dom='Bt'))
+    })
   
   
   
@@ -220,15 +232,12 @@ shinyServer(function(input, output, session) {
       return(NULL)
     m <- max(metalsCDF_DataSelect()$NResp)
     xaxis <- as.character(paste(capwords(tolower(metalsCDF_DataSelect()$Indicator[1])),' (',metalsCDF_DataSelect()$units[1],')'))
-    p1 <- ggplot(metalsCDF_DataSelect(), aes(x=Value,y=Estimate.P)) + geom_point() + labs(x=xaxis,y="Percentile") +
+    ggplot(metalsCDF_DataSelect(), aes(x=Value,y=Estimate.P)) + geom_point() + labs(x=xaxis,y="Percentile") +
       ggtitle(as.character(paste(capwords(tolower(metalsCDF_DataSelect()$Indicator[1])),'in \n',
                                  metalsCDF_DataSelect()$Subpopulation[1],'\n (n=',m,')'))) + 
       theme(plot.title = element_text(hjust=0.5,face='bold',size=15)) +
       theme(axis.title = element_text(face='bold',size=12))+ 
       geom_ribbon(data=metalsCDF_DataSelect(),aes(ymin=LCB95Pct.P,ymax=UCB95Pct.P),alpha=0.3)
-      
-    
-    p1
     })
   
   

@@ -72,3 +72,22 @@ metalsSites_long$Subpopulation <- as.factor(metalsSites_long$Subpopulation)
 saveRDS(metalsSites,'data/MetalsSites.RDS')
 saveRDS(metalsSites_long,'data/MetalsSites_long.RDS')
 
+
+# Update all stats to easily call in the app
+df <- data.frame(Metal=NA,Subpopulation=NA,n=NA,x5=NA,x10=NA,x25=NA,x50=NA,x75=NA,x90=NA,x95=NA)
+datalist <- list()
+
+for(i in 1:length(levels(metalsCDF$Indicator))){
+  onemetal <- filter(metalsCDF,Indicator==as.character(levels(metalsCDF$Indicator)[i]))
+  for(k in 1:length(levels(metalsCDF$Subpopulation))){
+    ind <- as.character(onemetal$Indicator[1])
+    sub <- as.character(levels(metalsCDF$Subpopulation)[k])
+    onemetalonepop <- filter(onemetal,Subpopulation==sub)
+    df1 <- populationSummary(onemetalonepop,ind,sub)%>%
+      mutate(Metal=ind,Subpopulation=sub)%>%select(Metal,Subpopulation,everything())
+    df[k,] <- df1
+  }
+  datalist[[i]] <- df
+}
+allstatsdata <- do.call(rbind,datalist)
+saveRDS(allstatsdata,'data/allstatsdata.RDS')

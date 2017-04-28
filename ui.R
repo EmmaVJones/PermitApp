@@ -2,9 +2,8 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                   tagList(
                     singleton(tags$head(tags$script(src='//cdn.datatables.net/fixedheader/2.1.2/js/dataTables.fixedHeader.min.js',type='text/javascript'))),
                     singleton(tags$head(tags$link(href='//cdn.datatables.net/fixedheader/2.1.2/css/dataTables.fixedHeader.css',rel='stylesheet',type='text/css')))
-                  ), 
+                    ), 
                   navbarPage('VDEQ Permit Tool',
-                             
                              navbarMenu("Background Metals Analysis",
                                         tabPanel("Probablilistic Monitoring (Weighted) Data",
                                                  bootstrapPage(div(class="outer",
@@ -34,17 +33,29 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                                    #absolutePanel(top=150, left=225, draggable = F,bottom="auto",height=50,width=175,
                                                                   #               textInput('targetlocationUnweighted',strong("Search by Location"),placeholder="Example: 37.5, -79.0")),
                                                                    fluidRow(
-                                                                     column(7,style='padding:0px 0px 0px 30px;',
+                                                                     column(7,style='padding:0px 10px 0px 30px;',
                                                                           h5(strong('Instructions:')),
                                                                           p("Use this section to help analyze background metals data for inclusion in forthcoming faciliy permit. 
                                                                             Use the drop down on the map to adjust the metal and subpopulation plotted on the map. You can click markers 
                                                                             to find out more information about each data point. Then review the associated summary statistics table and 
                                                                             cdf curve. You can specify multiple subpopulations below to review different statistical summaries all at 
-                                                                            once and copy or download them for future use.")),
+                                                                            once and copy or download them for future use."),
+                                                                          fluidRow(column(6,
+                                                                                          helpText('When you have selected the populations you want to review below, click
+                                                                                                   the button to the right to see all (weighted) metal statistics in one table. You can
+                                                                                                   download a report of all (weighted) metals statistics from that dialogue box.')),
+                                                                            column(6,actionButton('reviewstats',"Review Statistics for all metals",class='btn-block'))),
+                                                                          bsModal('allstatsModal',"Statistics for all metals (preview)",'reviewstats',size='large',
+                                                                                  h5("For faster app rendering, this is just a preview  of your selected data.",span(strong("Click the
+                                                                                     'Send to Report' button to review the entire dataset."))),
+                                                                                  hr(),
+                                                                                  DT::dataTableOutput('allstatstable'),
+                                                                                  br(),
+                                                                                  actionButton('knit','Send to Report'))
+                                                                          ),
                                                                           column(5,
                                                                                  h5(strong('CDF Curve')),
-                                                                                 #plotOutput("p_dMetal"),
-                                                                                 plotOutput('weightedMetalsCDF'))
+                                                                                 plotOutput('weightedMetalsCDF', height="300px"))
                                                                                  ),
                                                                    column(12,
                                                                           h5(strong("Statistical Summary")),
