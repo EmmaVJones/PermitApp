@@ -124,39 +124,58 @@ shinyServer(function(input, output, session) {
     return(filter(df,Subpopulation==input$subpopToPlot))
    })
   
+  # Subset metals CDF data based on user metal for stats below #
+  metalsCDF_DataSelectfortable <- reactive({
+    if(input$metalToPlot=="No Metals")
+      return(NULL)
+  filter(metalsCDF,Indicator==toupper(input$metalToPlot))})
   
+  # Population report section
   popsummaryVA <- reactive({
     if(is.null(metalsCDF_DataSelect()))
       return(NULL)
-    populationSummary(metalsCDF_DataSelect(),input$metalToPlot,"Virginia")
+    x <- filter(metalsCDF_DataSelectfortable(),Subpopulation=="Virginia")
+    populationSummary(x,input$metalToPlot,"Virginia")
   })
   popsummarybasin <- reactive({
-    if(is.null(metalsCDF_DataSelect())&input$basin!="")
+    if(is.null(metalsCDF_DataSelect())&input$basin!="-")
       return(NULL)
-    populationSummary(metalsCDF_DataSelect(),input$metalToPlot,input$basin)
+    x <- filter(metalsCDF_DataSelectfortable(),Subpopulation==input$basin)
+    populationSummary(x,input$metalToPlot,input$basin)
   })
   popsummarysuperBasin <- reactive({
-    if(is.null(metalsCDF_DataSelect())&input$superBasin!="")
+    if(is.null(metalsCDF_DataSelect())&input$superBasin!="-")
       return(NULL)
-    populationSummary(metalsCDF_DataSelect(),input$metalToPlot,input$superBasin)
+    x <- filter(metalsCDF_DataSelectfortable(),Subpopulation==input$superBasin)
+    populationSummary(x,input$metalToPlot,input$superBasin)
   })
   popsummaryeco <- reactive({
-    if(is.null(metalsCDF_DataSelect())&input$ecoregion!="")
+    if(is.null(metalsCDF_DataSelect())&input$ecoregion!="-")
       return(NULL)
     populationSummary(metalsCDF_DataSelect(),input$metalToPlot,input$ecoregion)
   })
   popsummaryorder <- reactive({
-    if(is.null(metalsCDF_DataSelect())&input$order!="")
+    if(is.null(metalsCDF_DataSelect())&input$order!="-")
       return(NULL)
     populationSummary(metalsCDF_DataSelect(),input$metalToPlot,input$order)
   })
+  popsummaryALL <- reactive({
+    if(is.null(metalsCDF_DataSelect()))
+      return(NULL)
+    x <- popsummaryVA()
+    if(input$basin!="-")
+      x <- rbind(x,popsummarybasin())
+    if(input$superBasin!="-")
+      x <- rbind(x,popsummarysuperBasin())
+    if(input$ecoregion!="-")
+      x <- rbind(x,popsummaryeco())
+    if(input$order!="-")
+      x <- rbind(x,popsummaryorder())
+    return(x)
+  })
   
-  #popsummaryALL <- reactive({
-  #  if(is.null(metalsCDF_DataSelect()))
-  #    return(NULL)
-  #  if(input$basin)
-    # use isolate to interactively add rows
-  #})
+  
+  
   # Add markers to map based on user selection #
   observe({
     if(is.null(metalsCDF_DataSelect()))
@@ -181,14 +200,16 @@ shinyServer(function(input, output, session) {
   
   # Summary table of input dataset #
   output$weightedMetalsTable <- DT::renderDataTable({
-    if(is.null(popsummaryVA()))
+    if(is.null(popsummaryALL()))
       return(NULL)
-    datatable(popsummaryVA(),
+    datatable(popsummaryALL(),
               colnames=c('Metal','Subpopulation','n','5%','10%','25%','50%','75%','90%','95%'),
               extensions = 'Buttons', escape=F, rownames = F,
               options=list(dom='Bt',
-                           buttons=list('copy')))
-  })
+                           buttons=list('copy',
+                           list(extend='csv',filename=paste('BackgroundMetals_',input$metalToPlot,Sys.Date(),sep='')),
+                           list(extend='excel',filename=paste('BackgroundMetals_',input$metalToPlot,Sys.Date(),sep='')))))
+  })                         
   
   
   

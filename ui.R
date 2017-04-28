@@ -42,27 +42,29 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                                             cdf curve. You can specify multiple subpopulations below to review different statistical summaries all at 
                                                                             once and copy or download them for future use.")),
                                                                           column(3,
-                                                                                 h5('CDF Curve')
+                                                                                 h5('CDF Curve'),
+                                                                                 verbatimTextOutput('test')
                                                                                  #plotOutput("p_dMetal"),
                                                                                  #plotOutput('weightedMetalsCDF'))
                                                                                  )),
                                                                    column(12,
                                                                           h5(strong("Statistical Summary")),
                                                                           fluidRow(column(3,selectInput('basin',"Choose a Basin",
-                                                                                                        choices = c("","Big Sandy","Chowan","Holston","James","New",
+                                                                                                        choices = c("-","Big Sandy","Chowan","Holston","James","New",
                                                                                                                     "Potomac","Rappahannock","Roanoke","Shenandoah","York"))),
                                                                                    column(3,selectInput('superBasin','Choose a SuperBasin',
-                                                                                                        choices = c("","Clinch-Powell","Potomac-Shenandoah",
+                                                                                                        choices = c("-","Clinch-Powell","Potomac-Shenandoah",
                                                                                                                     "Rappahannock-York","Tennessee"))),
                                                                                    column(3,selectInput('ecoregion',"Choose an Ecoregion",
-                                                                                                        choices = c("","Blue Ridge Mountains",
+                                                                                                        choices = c("-","Blue Ridge Mountains",
                                                                                                                     "Central Appalachian Ridges and Valleys",
                                                                                                                     "Central Appalachians","Northern Piedmont","Piedmont",
                                                                                                                     "Southeastern Plains"))),
                                                                                    column(3,selectInput('order','Choose a Stream Order',
-                                                                                                        choices=c("","First Order","Second Order",
+                                                                                                        choices=c("-","First Order","Second Order",
                                                                                                                   "Third Order","Fourth Order","Fifth Order")))
                                                                           )),
+                                                                  tableOutput('simpletable'),
                                                                    DT::dataTableOutput('weightedMetalsTable'))
                                                                )),
                                         tabPanel("Targeted Monitoring (Unweighted) Data",
