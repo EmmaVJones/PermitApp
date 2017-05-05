@@ -217,13 +217,13 @@ shinyServer(function(input, output, session) {
   
   observeEvent(input$reviewstats,{
     showModal(modalDialog(
-      title="Statistics for all metals (preview)",
+      title="Statistics for all metals (Preview)",
       h5("For faster app rendering, this is just a preview  of your selected data.",
          span(strong("Click the 'Send to Report' button to review the entire dataset."))),
       hr(),
       tableOutput('allstatstable'),
       br(),
-     actionButton('knit','Send to Report'),
+     downloadButton('knit','Send to Report'),
       easyClose = TRUE
     ))
   })
@@ -248,7 +248,19 @@ shinyServer(function(input, output, session) {
       geom_ribbon(data=metalsCDF_DataSelect(),aes(ymin=LCB95Pct.P,ymax=UCB95Pct.P),alpha=0.3)
     })
   
+  ##---------------------------------------RMARKDOWN SECTION----------------------------------------------
   
+  output$knit <- downloadHandler(
+    'results.html',
+    content= function(file){
+      tempReport <- file.path(tempdir(), "reportHTML.Rmd")
+      file.copy("reportHTML.Rmd",tempReport,overwrite=T)
+      params <- list(table_allstats=allstats())
+      
+      rmarkdown::render(tempReport,output_file= file,
+                        params=params, envir=new.env(parent=globalenv()))})
+  ##------------------------------------------------------------------------------------------------------
+
   
   
   

@@ -1,0 +1,14 @@
+---
+title: "Background Metals Analysis (Weighted)"
+output: html_document
+params: 
+  table_allstats: 'NULL'
+---
+
+### All statistics (Weighted Data)
+```{r,echo=F}
+DT::datatable(params[['table_allstats']],rownames = F,
+              colnames=c('Metal','Subpopulation','n','5%','10%','25%','50%','75%','90%','95%'),
+              options=list(dom='t',
+                           pageLength=nrow(params[['table_allstats']])))
+```
