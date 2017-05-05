@@ -44,14 +44,7 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                                                           helpText('When you have selected the populations you want to review below, click
                                                                                                    the button to the right to see all (weighted) metal statistics in one table. You can
                                                                                                    download a report of all (weighted) metals statistics from that dialogue box.')),
-                                                                            column(6,actionButton('reviewstats',"Review Statistics for all metals",class='btn-block'))),
-                                                                          bsModal('allstatsModal',"Statistics for all metals (preview)",'reviewstats',size='large',
-                                                                                  h5("For faster app rendering, this is just a preview  of your selected data.",span(strong("Click the
-                                                                                     'Send to Report' button to review the entire dataset."))),
-                                                                                  hr(),
-                                                                                  DT::dataTableOutput('allstatstable'),
-                                                                                  br(),
-                                                                                  actionButton('knit','Send to Report'))
+                                                                            column(6,actionButton('reviewstats',"Review Statistics for all metals",class='btn-block')))
                                                                           ),
                                                                           column(5,
                                                                                  h5(strong('CDF Curve')),

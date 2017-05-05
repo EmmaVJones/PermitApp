@@ -215,16 +215,24 @@ shinyServer(function(input, output, session) {
     
   })
   
-  output$allstatstable <- DT::renderDataTable({
-    if(is.null(allstats()))
-      return(NULL)
-    datatable(allstats()[1:10,1:7],rownames = F,
-              colnames=c('Metal','Subpopulation','n','5%','10%','25%','50%'),
-              options=list(dom='Bt'))
-    })
+  observeEvent(input$reviewstats,{
+    showModal(modalDialog(
+      title="Statistics for all metals (preview)",
+      h5("For faster app rendering, this is just a preview  of your selected data.",
+         span(strong("Click the 'Send to Report' button to review the entire dataset."))),
+      hr(),
+      tableOutput('allstatstable'),
+      br(),
+     actionButton('knit','Send to Report'),
+      easyClose = TRUE
+    ))
+  })
   
-  
-  
+  output$allstatstable <- renderTable({
+    df <- allstats()[1:10,1:7]
+    df$n <- format(df$n,digits=1)
+    names(df) <- c('Metal','Subpopulation','n','5%','10%','25%','50%')
+    return(df)})
   
   # Updating dissolved metals cdf plot
   output$weightedMetalsCDF <- renderPlot({
