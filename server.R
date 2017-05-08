@@ -36,8 +36,7 @@ shinyServer(function(input, output, session) {
   #output$GageMap <- renderMapview({
     #mapview(gageInfo, popup = popupTable(gageInfo, zcol = c("GageNo","StationName",
     #                                                        "DrainArea","HUC8","WebAddress")))})
-  
-  output$test <- renderPrint({input$targetlocation})
+
 
   
   ## Move map view to adjust with marker click ##
@@ -59,7 +58,7 @@ shinyServer(function(input, output, session) {
   observeEvent(input$GageMap_marker_click,{
     click<-input$GageMap_marker_click
     if(!is.null(click$id))
-      output$gageText <- renderPrint({cat('Gage Number:',click$id)})
+      output$gageText <- renderPrint({cat('Gage Currently Selected:',click$id)})
     # use cat() instead of paste() to not show line numbers
   })
   
@@ -270,35 +269,6 @@ shinyServer(function(input, output, session) {
   })
   output$weightedMetalsCDF <- renderPlot({wCDFplot()})
   
-  
-  
-  
-  
-  #output$weightedMetalsCDF <- renderPlot({
-  #  if(is.null(metalsCDF_DataSelect()))
-  #    return(NULL)
-  #  m <- max(metalsCDF_DataSelect()$NResp)
-  #  xaxis <- as.character(paste(capwords(tolower(metalsCDF_DataSelect()$Indicator[1])),' (',metalsCDF_DataSelect()$units[1],')'))
-  #  p <- ggplot(metalsCDF_DataSelect(), aes(x=Value,y=Estimate.P)) + geom_point() + labs(x=xaxis,y="Percentile") +
-  #    ggtitle(as.character(paste(capwords(tolower(metalsCDF_DataSelect()$Indicator[1])),'in \n',
-  #                               metalsCDF_DataSelect()$Subpopulation[1],'\n (n=',m,')'))) + 
-  #    theme(plot.title = element_text(hjust=0.5,face='bold',size=15)) +
-  #    theme(axis.title = element_text(face='bold',size=12))+ 
-  #    geom_ribbon(data=metalsCDF_DataSelect(),aes(ymin=LCB95Pct.P,ymax=UCB95Pct.P),alpha=0.3)
-  #  if(is.null(marker())){
-  #    return(p)
-  #    }else{
-  #      dat <- subset(metalsSites,StationID_Trend %in% as.character(marker()))%>%
-  #        select_(toupper(input$metalToPlot))
-  #      cdf <- select(metalsCDF_DataSelect(),Value,Estimate.P)
-  #      df <- data.frame(Value=dat[[1]],Estimate.P=vlookup(dat[[1]],cdf,2,TRUE))
-  #      return(p+geom_point(data=df,aes(x=Value,y=Estimate.P),color='orange',size=4)
-  #               )
-          
-  #      }
-    
-  #  })
-  
   ##---------------------------------------RMARKDOWN SECTION----------------------------------------------
   
   output$knit <- downloadHandler(
@@ -312,22 +282,87 @@ shinyServer(function(input, output, session) {
                         params=params, envir=new.env(parent=globalenv()))})
   ##------------------------------------------------------------------------------------------------------
 
-  ## Background Metals UNweighted (all data) Section
+  #-------------------------------------------------------------------------------------------
+  ## Background Metals UNweighted (all data) Section ##
+  #-------------------------------------------------------------------------------------------
+  output$unweightedMap <- renderLeaflet({
+    if(input$targetlocationUN==""){
+      leaflet() %>% addProviderTiles('Thunderforest.Landscape') %>%
+        addMouseCoordinates()%>%addHomeButton(extent(metalsSites1), "Virginia")%>%
+        addCircleMarkers(data=metalsSites1,radius=6,
+                         color=~'black',stroke=F,fillOpacity=0.5,
+                         group='selectedSites_UN',layerId=~StationID_Trend,
+                         popup=popupTable(metalsSites1, zcol = c("StationID","Year","StationID_Trend","CALCIUM","MAGNESIUM","ARSENIC","BARIUM",         
+                                                                "BERYLLIUM","CADMIUM","CHROMIUM","COPPER","IRON","LEAD","MANGANESE","THALLIUM",
+                                                                "NICKEL","SILVER","ZINC","ANTIMONY","ALUMINUM","SELENIUM","HARDNESS","MERCURY")))
+    }else{
+      target_pos = geocode(input$targetlocationUN)
+      
+      leaflet()%>%addProviderTiles('Thunderforest.Landscape')%>%addMouseCoordinates()%>%
+        setView(lng=target_pos$lon,lat=target_pos$lat,zoom=10)%>%
+        addCircleMarkers(data=metalsSites1,radius=6,
+                         color=~'black',stroke=F,fillOpacity=0.5,
+                         group='selectedSites_UN',layerId=~StationID_Trend,
+                         popup=popupTable(metalsSites1, zcol = c("StationID","Year","StationID_Trend","CALCIUM","MAGNESIUM","ARSENIC","BARIUM",         
+                                                                "BERYLLIUM","CADMIUM","CHROMIUM","COPPER","IRON","LEAD","MANGANESE","THALLIUM",
+                                                                "NICKEL","SILVER","ZINC","ANTIMONY","ALUMINUM","SELENIUM","HARDNESS","MERCURY")))
+      }
+                           
+                           
+    
+      
+  })
   
-  #output$weightedMap <- renderLeaflet({
-  #  leaflet(metalsSites) %>% addProviderTiles('Thunderforest.Landscape') %>%
-  #    fitBounds(~min(LongitudeDD),~min(LatitudeDD),~max(LongitudeDD),~max(LatitudeDD))%>%
-  #    #fitBounds(metalsSites1@bbox)
-  #    addMouseCoordinates()%>%addHomeButton(extent(metalsSites1), "Virginia")
+  #output$GageMap <- renderLeaflet({
+  #  if(input$targetlocationUN==""){
+  #    leaflet()%>%addProviderTiles('Thunderforest.Landscape')%>%addMouseCoordinates()%>%
+  #      addHomeButton(extent(gageInfo), "Virginia Gages")%>%
+  #      addCircleMarkers(data=gageInfo,radius=6,color=~'blue',stroke=F,
+  #                       fillOpacity=0.5,group='gages',layerId=~GageNo,
+  #                       popup=popupTable(gageInfo, zcol = c("GageNo","StationName","DrainArea",
+  #                                                           "HUC8","WebAddress")))}
+  #  else{
+  #    target_pos = geocode(input$targetlocation)
+  #    
+  #    leaflet()%>%addProviderTiles('Thunderforest.Landscape')%>%addMouseCoordinates()%>%
+  #      setView(lng=target_pos$lon,lat=target_pos$lat,zoom=10)%>%
+  #      #addHomeButton(extent(gageInfo), "Virginia Gages")%>%
+  #      addCircleMarkers(data=gageInfo,radius=6,color=~'blue',stroke=F,
+  #                       fillOpacity=0.5,group='gages',layerId=~GageNo,
+  #                       popup=popupTable(gageInfo, zcol = c("GageNo","StationName","DrainArea",
+  #                                                           "HUC8","WebAddress")))
+      
+  #  }
+    
   #})
   
-  # Subset metals CDF data based on user metal and subpopulation #
-  #metalsCDF_DataSelect <- reactive({
-  #  if(input$metalToPlot=="No Metals")
+  
+  
+  
+  
+  # Subset metals unweighted data based on user metal #
+  metalsUN_DataSelect <- reactive({
+    if(input$metalToPlotUN=="No Metals")
+      return(NULL)
+    df <- filter(metalsSites_long,metal==toupper(input$metalToPlotUN))
+  })
+  
+  
+  # Add markers to map based on user selection #
+  #observe({
+  #  if(is.null(metalsUN_DataSelect()))
   #    return(NULL)
-  #  df <- filter(metalsCDF,Indicator==toupper(input$metalToPlot))
-  #  if(input$subpopToPlot=="Virginia"){
-  #    return(filter(df,Subpopulation=="Virginia"))}else{return(filter(df,Subpopulation==input$subpopToPlot))}
+  #  
+  #  leafletProxy('unweightedMap',data=metalsUN_DataSelect()) %>% clearMarkers() %>%
+  #    clearControls() %>%
+  #    addCircleMarkers(data=metalsUN_DataSelect(),~LongitudeDD,~LatitudeDD,radius=6,
+  #                     color=~'black',stroke=F,fillOpacity=0.5,
+  #                     #color=~pal(metal_value),
+  #                     group='selectedSites_UN',layerId=~StationID_Trend,
+  #                     popup=paste(sep= "<br/>",metalsUN_DataSelect()$StationID,
+  #                                 paste(capwords(tolower(metalsUN_DataSelect()$metal)),":",
+  #                                       metalsUN_DataSelect()$metal_value,
+  #                                       unique(metalsUN_DataSelect()$units),sep=" ")))
   #})
   
   # Subset metals sites based on user metal and subpopulation #
@@ -339,8 +374,6 @@ shinyServer(function(input, output, session) {
   #    return(filter(df,category=='Basin'))
   #  return(filter(df,Subpopulation==input$subpopToPlot))
   #})
-  
-  
   
   
   

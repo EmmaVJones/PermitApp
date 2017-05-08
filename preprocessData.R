@@ -69,6 +69,19 @@ metalsSites_long$StationID <- as.factor(metalsSites_long$StationID)
 metalsSites_long$StationID_Trend <- as.factor(metalsSites_long$StationID_Trend)
 metalsSites_long$Subpopulation <- as.factor(metalsSites_long$Subpopulation)
 
+
+metalsSites_long <- mutate(metalsSites_long,units=metal)
+metalsSites_long$units <- dplyr::recode(metalsSites_long$units,"VSCIAll"="(unitless)","DChloride"="mg/L","DO"="mg/L","DPotassium"="mg/L","DSodium"="mg/L","DSulfate"="mg/L",
+                                 "LRBS"="(unitless)", "MetalsCCU"="(unitless)","pH"="(unitless)","SpCond"="uS/cm","TDS"="mg/L",
+                                 "TN"="mg/L","TotalHabitat"="(unitless)","TP"="mg/L","ANTIMONY"="ug/L","ALUMINUM"="ug/L",
+                                 "ARSENIC"="ug/L","BARIUM"="ug/L","BERYLLIUM"="ug/L","CADMIUM"="ug/L","CALCIUM"="mg/L","CHROMIUM"="ug/L",
+                                 "COPPER"="ug/L","IRON"="ug/L","LEAD"="ug/L","MAGNESIUM"="mg/L","MANGANESE"="ug/L","NICKEL"="ug/L",
+                                 "SELENIUM"="ug/L","SILVER"="ug/L","THALLIUM"="ug/L","ZINC"="ug/L","HARDNESS"="mg/L")    
+
+
+
+
+
 saveRDS(metalsSites,'data/MetalsSites.RDS')
 saveRDS(metalsSites_long,'data/MetalsSites_long.RDS')
 

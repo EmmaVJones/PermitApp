@@ -5,6 +5,29 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                     ), 
                   navbarPage('VDEQ Permit Tool',
                              navbarMenu("Background Metals Analysis",
+                                        tabPanel("Targeted Monitoring (Unweighted) Data",
+                                                 bootstrapPage(div(class="outer",
+                                                                   tags$style(type ="text/css",".outer {position: fixed; top: 75px; left: 0; right: 0; bottom: 0; overflow-y: scroll; padding: 0}"),
+                                                                   column(11,wellPanel(h4('This section uses all monitoring data available from the Probabilistic Monitoring programs, 
+                                                                             facilities, and targeted monitoring stations, thus results from this page are unweighted 
+                                                                             and represent the extent of monitored sites statewide.'))),
+                                                                   leafletOutput("unweightedMap"),
+                                                                   absolutePanel(top=150, left=60, draggable = F,bottom="auto",height=100,width=150,
+                                                                                 textInput('targetlocationUN',"Search by Location",placeholder="Example: 37.564, -79.045")
+                                                                                 #selectInput('metalToPlotUN',label=strong('Choose a Metal'),
+                                                                                 #            choices=c("No Metals",capwords(tolower(levels(metalsSites_long$metal)))))
+                                                                                 ),
+                                                                   column(11,
+                                                                          p("Use this section to help analyze background metals data for inclusion in forthcoming faciliy permit. 
+                                                                            Type the facility's",strong("latitude")," and ",strong("longitude")," into the input box to add a marker 
+                                                                            to the map at the permit location. Then review the layers available on the interactive map to select a 
+                                                                            scale for analysis. You can adjust these as often as you like to analze the data at different resolutions."),
+                                                                          wellPanel(
+                                                                            h5("")
+                                                                          )
+                                                                          
+                                                                   )))
+                                        ),
                                         tabPanel("Probablilistic Monitoring (Weighted) Data",
                                                  bootstrapPage(div(class="outer",
                                                                    tags$style(type ="text/css",".outer {position: fixed; top: 75px; left: 0; right: 0; bottom: 0; overflow-y: scroll; padding: 0}"),
@@ -36,10 +59,10 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                                      column(7,style='padding:0px 10px 0px 30px;',
                                                                           h5(strong('Instructions:')),
                                                                           p("Use this section to help analyze background metals data for inclusion in forthcoming faciliy permit. 
-                                                                            Use the drop down on the map to adjust the metal and subpopulation plotted on the map. You can click markers 
-                                                                            to find out more information about each data point. Then review the associated summary statistics table and 
-                                                                            cdf curve. You can specify multiple subpopulations below to review different statistical summaries all at 
-                                                                            once and copy or download them for future use."),
+                                                                            Use the drop down on the map to adjust the metal and subpopulation plotted on the map. You can click the markers 
+                                                                            to find out more information about each data point. Review the associated summary statistics table below and 
+                                                                            cdf curve to the right. You can specify multiple subpopulations that characterize your site in the table below to 
+                                                                            review different statistical summaries simultaneously and copy or download them for future use."),
                                                                           fluidRow(column(6,
                                                                                           helpText('When you have selected the populations you want to review below, click
                                                                                                    the button to the right to see all (weighted) metal statistics in one table. You can
@@ -68,25 +91,8 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                                                                                   "Third Order","Fourth Order","Fifth Order")))
                                                                           )),
                                                                   DT::dataTableOutput('weightedMetalsTable'))
-                                                               )),
-                                        tabPanel("Targeted Monitoring (Unweighted) Data",
-                                                 bootstrapPage(div(class="outer",
-                                                                   tags$style(type ="text/css",".outer {position: fixed; top: 75px; left: 0; right: 0; bottom: 0; overflow-y: scroll; padding: 0}"),
-                                                                   column(11,wellPanel(h4('This section uses all monitoring data available from the Probabilistic Monitoring programs, 
-                                                                             facilities, and targeted monitoring stations, thus results from this page are unweighted 
-                                                                             and represent the extent of monitored sites statewide.'))),
-                                                                   leafletOutput("unweightedMap"),
-                                                                   column(11,
-                                                                          p("Use this section to help analyze background metals data for inclusion in forthcoming faciliy permit. 
-                                                                            Type the facility's",strong("latitude")," and ",strong("longitude")," into the input box to add a marker 
-                                                                            to the map at the permit location. Then review the layers available on the interactive map to select a 
-                                                                            scale for analysis. You can adjust these as often as you like to analze the data at different resolutions."),
-                                                                          wellPanel(
-                                                                            h5("")
-                                                                          )
-                                                                          
-                                                                          )))
-                                                 )),
+                                                               ))
+                                        ),
                              navbarMenu("Flow Analysis",
                                         tabPanel("Stream Gage Selection",
                                                  bootstrapPage(div(class="outer",
