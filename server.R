@@ -1,9 +1,12 @@
 source('global.R')
 
 # Upload GIS data here to avoid uploading it twice (if it were in the global.R file)
-#Ecoregions <- readOGR('C:/HardDriveBackup/R/PermitTool/PermitApp/data','vaECOREGIONlevel3__proj84')
-#Superbasins <- readOGR('C:/HardDriveBackup/R/PermitTool/PermitApp/data','VAsuperbasins_proj84')
-
+Ecoregions <- readOGR('data','vaECOREGIONlevel3__proj84')
+Ecoregions@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+Superbasins <- readOGR('data','VAsuperbasins_proj84')
+Superbasins@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+huc8 <- readOGR('data','HUC8_wgs84')
+huc8@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
 
 
 shinyServer(function(input, output, session) {
@@ -285,6 +288,10 @@ shinyServer(function(input, output, session) {
   #-------------------------------------------------------------------------------------------
   ## Background Metals UNweighted (all data) Section ##
   #-------------------------------------------------------------------------------------------
+  activeDotUN <- function(map,x,y){addCircleMarkers(map,x,y,radius=6,color='black',fillColor = 'yellow',
+                                                  fillOpacity = 1,opacity=1,weight = 2,stroke=T,layerId = 'SelectedUN')}
+  
+  
   output$unweightedMap <- renderLeaflet({
     if(input$targetlocationUN==""){
       leaflet() %>% addProviderTiles('Thunderforest.Landscape') %>%
@@ -306,82 +313,90 @@ shinyServer(function(input, output, session) {
                          popup=popupTable(metalsSites1, zcol = c("StationID","Year","StationID_Trend","CALCIUM","MAGNESIUM","ARSENIC","BARIUM",         
                                                                 "BERYLLIUM","CADMIUM","CHROMIUM","COPPER","IRON","LEAD","MANGANESE","THALLIUM",
                                                                 "NICKEL","SILVER","ZINC","ANTIMONY","ALUMINUM","SELENIUM","HARDNESS","MERCURY")))
-      }
-                           
-                           
-    
-      
+    }
   })
   
-  #output$GageMap <- renderLeaflet({
-  #  if(input$targetlocationUN==""){
-  #    leaflet()%>%addProviderTiles('Thunderforest.Landscape')%>%addMouseCoordinates()%>%
-  #      addHomeButton(extent(gageInfo), "Virginia Gages")%>%
-  #      addCircleMarkers(data=gageInfo,radius=6,color=~'blue',stroke=F,
-  #                       fillOpacity=0.5,group='gages',layerId=~GageNo,
-  #                       popup=popupTable(gageInfo, zcol = c("GageNo","StationName","DrainArea",
-  #                                                           "HUC8","WebAddress")))}
-  #  else{
-  #    target_pos = geocode(input$targetlocation)
-  #    
-  #    leaflet()%>%addProviderTiles('Thunderforest.Landscape')%>%addMouseCoordinates()%>%
-  #      setView(lng=target_pos$lon,lat=target_pos$lat,zoom=10)%>%
-  #      #addHomeButton(extent(gageInfo), "Virginia Gages")%>%
-  #      addCircleMarkers(data=gageInfo,radius=6,color=~'blue',stroke=F,
-  #                       fillOpacity=0.5,group='gages',layerId=~GageNo,
-  #                       popup=popupTable(gageInfo, zcol = c("GageNo","StationName","DrainArea",
-  #                                                           "HUC8","WebAddress")))
-      
-  #  }
+  ## Move map view to adjust with marker click ##
+  observeEvent(input$unweightedMap_marker_click,{
+    click <- input$unweightedMap_marker_click
+    proxy <- leafletProxy("unweightedMap")
+    if(click$id=="SelectedUN"){
+      proxy%>%removeMarker(layerId='SelectedUN')
+    }else{
+      proxy %>% setView(lng=click$lng,
+                        lat=ifelse(input$unweightedMap_zoom<10,click$lat+(3/input$unweightedMap_zoom),click$lat),
+                        input$unweightedMap_zoom)%>%
+        activeDotUN(click$lng,click$lat)
+    }
+  })
+  
+  ## Plot Facility on map ##
+  observeEvent(input$runStats,{
+    lat <- as.numeric(gsub(" ","",strsplit(input$facilityUN,",")[[1]][1]))
+    lng <- as.numeric(gsub(" ","",strsplit(input$facilityUN,",")[[1]][2]))
+    # make a spatial object from lat/long
+    point <- data.frame(name='userPoint',lat=lat,lng=lng)
+    coordinates(point) <- ~lng+lat
+    proj4string(point) <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")       
     
-  #})
+    leafletProxy('unweightedMap') %>% clearMarkers() %>% clearControls() %>%
+      setView(lng=lng,lat=lat,zoom=9)%>%
+      addCircleMarkers(data=metalsSites1,radius=6,
+                       color=~'black',stroke=F,fillOpacity=0.5,
+                       group='selectedSites_UN',layerId=~StationID_Trend,
+                       popup=popupTable(metalsSites1, zcol = c("StationID","Year","StationID_Trend","CALCIUM","MAGNESIUM","ARSENIC","BARIUM",         
+                                                               "BERYLLIUM","CADMIUM","CHROMIUM","COPPER","IRON","LEAD","MANGANESE","THALLIUM",
+                                                               "NICKEL","SILVER","ZINC","ANTIMONY","ALUMINUM","SELENIUM","HARDNESS","MERCURY")))%>%
+      addCircleMarkers(data=point,radius=8,
+                       color=~'red',stroke=F,fillOpacity=0.5,
+                       group='selectedSites_UN',layerId='Facility',popup='User Facility')
+    
+  })
+  
+  ## Add polygons ##
+  observe({if(input$supaBshape==T){
+    leafletProxy('unweightedMap')%>%
+      addPolygons(data=Superbasins,color='blue',fill=0.9,stroke=0.1,group="Superbasins_",
+                  popup=paste("Superbasin: ",Superbasins@data$NAME,sep=""))}else(leafletProxy('unweightedMap')%>%clearGroup("Superbasins_"))})
+  
+  observe({if(input$ecoshape==T){
+    leafletProxy('unweightedMap')%>%
+      addPolygons(data=Ecoregions,color='grey',fill=0.9,stroke=0.1,group="Ecoregions_",
+                  popup=paste("Ecoregion: ",Ecoregions@data$NAME,sep=""))}else(leafletProxy('unweightedMap')%>%clearGroup("Ecoregions_"))})
+  
+  observe({if(input$hucshape==T){
+    leafletProxy('unweightedMap')%>%
+      addPolygons(data=huc8,color='orange',fill=0.9,stroke=0.1,group="huc_",
+                  popup=paste(sep="<br/>",paste("HUC8: ",huc8@data$CU,sep=""),
+                              paste('Name: ',capwords(tolower(huc8@data$NAME)),sep="")))}else(leafletProxy('unweightedMap')%>%clearGroup("huc_"))})
   
   
+  ## grey out runStats button until both fields are filled in ##
+  observe({
+    shinyjs::toggleState('runStats', input$facilityUN !="" && input$metalToPlotUN != "No Metals")
+  })
   
+
+  basin <- eventReactive(input$runStats,{
+    geogsub(input$facilityUN,Superbasins,input$metalToPlotUN)})
+  output$basinTable <- renderTable({basin()})
   
+  eco <- eventReactive(input$runStats,{
+    x <- geogsub(input$facilityUN,Ecoregions,input$metalToPlotUN)
+    if(nrow(x)>0){return(x%>%rename(Ecoregion=Watershed))}else{return(x)}})
+  output$ecoTable <- renderTable({eco()})
   
+  huc <- eventReactive(input$runStats,{
+    geogsub(input$facilityUN,huc8,input$metalToPlotUN)})
+  output$huc8Table <- renderTable({huc()})
+  
+  #
   # Subset metals unweighted data based on user metal #
-  metalsUN_DataSelect <- reactive({
-    if(input$metalToPlotUN=="No Metals")
-      return(NULL)
-    df <- filter(metalsSites_long,metal==toupper(input$metalToPlotUN))
-  })
-  
-  
-  # Add markers to map based on user selection #
-  #observe({
-  #  if(is.null(metalsUN_DataSelect()))
+  #metalsUN_DataSelect <- reactive({
+  #  if(input$metalToPlotUN=="No Metals")
   #    return(NULL)
-  #  
-  #  leafletProxy('unweightedMap',data=metalsUN_DataSelect()) %>% clearMarkers() %>%
-  #    clearControls() %>%
-  #    addCircleMarkers(data=metalsUN_DataSelect(),~LongitudeDD,~LatitudeDD,radius=6,
-  #                     color=~'black',stroke=F,fillOpacity=0.5,
-  #                     #color=~pal(metal_value),
-  #                     group='selectedSites_UN',layerId=~StationID_Trend,
-  #                     popup=paste(sep= "<br/>",metalsUN_DataSelect()$StationID,
-  #                                 paste(capwords(tolower(metalsUN_DataSelect()$metal)),":",
-  #                                       metalsUN_DataSelect()$metal_value,
-  #                                       unique(metalsUN_DataSelect()$units),sep=" ")))
+  #  df <- filter(metalsSites_long,metal==toupper(input$metalToPlotUN))
   #})
-  
-  # Subset metals sites based on user metal and subpopulation #
-  #metalsSites_DataSelect <- reactive({
-  #  if(is.null(metalsCDF_DataSelect()))
-  #    return(NULL)
-  #  df <- filter(metalsSites_long,metal==toupper(input$metalToPlot))
-  #  if(input$subpopToPlot=="Virginia")
-  #    return(filter(df,category=='Basin'))
-  #  return(filter(df,Subpopulation==input$subpopToPlot))
-  #})
-  
-  
-  
-  #output$unweightedMap <- renderMapview({
-  #  mapview( Ecoregions, zcol="US_L3NAME")+# popup = popupTable( eco2 , zcol = c("US_L3NAME")))+
-  #    mapview(Superbasins,zcol="SUPERBASIN")#popup= popupTable( supaB2 , zcol = c("SUPERBASIN")))
-  #  
-  #  })
   
   
   

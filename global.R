@@ -2,12 +2,14 @@ library(shiny)
 library(mapview)
 library(raster)
 library(shinyBS)
+library(shinyjs)
 library(dplyr)
 library(shinyFiles)
 library(ggmap)
 library(rgdal)
 library(htmltools)
 library(DT)
+library(tidyr)
 
 
 ## Data
@@ -95,4 +97,42 @@ populationSummary <- function(dataset,metal,subpopulation){
                       x90=vlookup(90,dataset2,2,range=T),x95=vlookup(95,dataset2,2,range=T))
   return(stats)
 }
+latlong <-'36.35, -78.965'
+watershedlevel <- huc8
+metalOfInterest <- 'magnesium'
 
+## Geographic subset and unweighted statistics ##
+geogsub <- function(latlong,watershedlevel,metalOfInterest){
+  # assign lat/long values and remove any spaces from the string
+  lat <- as.numeric(gsub(" ","",strsplit(latlong,",")[[1]][1]))
+  lng <- as.numeric(gsub(" ","",strsplit(latlong,",")[[1]][2]))
+  # make a spatial object from lat/long
+  point <- data.frame(name='userPoint',lat=lat,lng=lng)
+  coordinates(point) <- ~lng+lat
+  proj4string(point) <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")        
+  # identify which polygon to clip metalsSites1 based on point location
+  poly<- watershedlevel[point,]
+  if(nrow(poly@data)==0){return(NULL)}else{
+    #  clip metalsSites1 to poly
+    metalsSites2 <- metalsSites1[poly,]
+    # subset metalsSites_long by sites identified by watershed clip
+    toclip <- metalsSites2@data$StationID
+    metalsSites3 <- filter(metalsSites_long,metal==toupper(metalOfInterest),
+                           StationID %in% toclip,category=='Basin') #just get one of each
+    x <- as.data.frame(signif(quantile(metalsSites3$metal_value,
+                                       probs=c(0.05,0.1,0.25,0.5,0.75,0.9,0.95),
+                                       na.rm=T),3))
+    x <- mutate(x,Percentile=rownames(x))
+    names(x)[1] <- 'Value'
+    # rearrange so it makes sense
+    xwide <- spread(x,Percentile,Value)%>%select(one_of("5%","10%","25%", "50%","75%","90%","95%"))%>%
+      mutate(Watershed=poly@data$NAME,n=sum(!is.na(metalsSites3$metal_value)))%>%select(Watershed,n,everything())
+    if(length(poly@data)>2){
+      xwide <- mutate(xwide,HUC8=poly@data$CU)%>%select(Watershed,HUC8,everything())}
+    return(xwide)}
+  
+  }
+
+#geogsub('36.35, -78.965',huc8,'magnesium')
+#geogsub('37.265, -78.56',Ecoregions,'iron')
+#geogsub('37.265, -78.56',Superbasins,'iron')

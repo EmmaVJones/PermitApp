@@ -3,6 +3,7 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                     singleton(tags$head(tags$script(src='//cdn.datatables.net/fixedheader/2.1.2/js/dataTables.fixedHeader.min.js',type='text/javascript'))),
                     singleton(tags$head(tags$link(href='//cdn.datatables.net/fixedheader/2.1.2/css/dataTables.fixedHeader.css',rel='stylesheet',type='text/css')))
                     ), 
+                  shinyjs::useShinyjs(),
                   navbarPage('VDEQ Permit Tool',
                              navbarMenu("Background Metals Analysis",
                                         tabPanel("Targeted Monitoring (Unweighted) Data",
@@ -12,18 +13,32 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                                              facilities, and targeted monitoring stations, thus results from this page are unweighted 
                                                                              and represent the extent of monitored sites statewide.'))),
                                                                    leafletOutput("unweightedMap"),
-                                                                   absolutePanel(top=150, left=60, draggable = F,bottom="auto",height=100,width=150,
-                                                                                 textInput('targetlocationUN',"Search by Location",placeholder="Example: 37.564, -79.045")
-                                                                                 #selectInput('metalToPlotUN',label=strong('Choose a Metal'),
-                                                                                 #            choices=c("No Metals",capwords(tolower(levels(metalsSites_long$metal)))))
-                                                                                 ),
+                                                                   absolutePanel(top=150, left=60, draggable = F,bottom="auto",height=80,width=205,
+                                                                                 textInput('targetlocationUN',"Search by Location",placeholder="Example: 37.564, -79.045"),
+                                                                                 wellPanel(checkboxInput('supaBshape','Plot Superbasins',value=F),
+                                                                                 checkboxInput('ecoshape','Plot Ecoregions',value=F),
+                                                                                 checkboxInput('hucshape','Plot HUC8 Watersheds',value=F),style='padding: 3px;')),
                                                                    column(11,
                                                                           p("Use this section to help analyze background metals data for inclusion in forthcoming faciliy permit. 
                                                                             Type the facility's",strong("latitude")," and ",strong("longitude")," into the input box to add a marker 
-                                                                            to the map at the permit location. Then review the layers available on the interactive map to select a 
+                                                                            to the map at the permit location. ",strong("Remember to use a comma between latitude and longitude.")," Then review the layers available on the interactive map to select a 
                                                                             scale for analysis. You can adjust these as often as you like to analze the data at different resolutions."),
                                                                           wellPanel(
-                                                                            h5("")
+                                                                            h5(strong("Unweighted Statistics")),
+                                                                            fluidRow(column(4,
+                                                                                            textInput('facilityUN','Facility:',placeholder='Latitude, Longitude')),
+                                                                                     column(4,
+                                                                                            selectInput('metalToPlotUN',label=strong('Choose a Metal'),
+                                                                                                        choices=c("No Metals",capwords(tolower(levels(metalsSites_long$metal)))))),
+                                                                                     column(4,
+                                                                                            actionButton('runStats',"Plot Facility and Run Statistics"))),
+                                                                            br(),br(),
+                                                                            fluidRow(column(3,h6(strong('Superbasin Statistics'))),
+                                                                                     column(9,tableOutput('basinTable'))),
+                                                                            fluidRow(column(3,h6(strong('Ecoregion Statistics'))),
+                                                                                     column(9,tableOutput('ecoTable'))),
+                                                                            fluidRow(column(3,h6(strong('Superbasin Statistics'))),
+                                                                                     column(9,tableOutput('huc8Table')))
                                                                           )
                                                                           
                                                                    )))
