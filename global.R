@@ -97,9 +97,9 @@ populationSummary <- function(dataset,metal,subpopulation){
                       x90=vlookup(90,dataset2,2,range=T),x95=vlookup(95,dataset2,2,range=T))
   return(stats)
 }
-latlong <-'36.35, -78.965'
-watershedlevel <- huc8
-metalOfInterest <- 'magnesium'
+#latlong <-'36.35, -78.965'
+#watershedlevel <- huc8
+#metalOfInterest <- 'magnesium'
 
 ## Geographic subset and unweighted statistics ##
 geogsub <- function(latlong,watershedlevel,metalOfInterest){

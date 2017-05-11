@@ -141,7 +141,8 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                         )),
                             tabPanel('About',fluidRow(column(10,
                                                              h5("This tool was created to assist VDEQ  staff in the permit review process."),
-                                                             p("Other stuff."))))
+                                                             p("Other stuff.")))),
+                            tabPanel(HTML(" </a></li><li><a href=\'https://enviromapper.us/shiny/'>| Shiny Homepage |"))
                             
                   )
                   )
