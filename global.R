@@ -1,5 +1,6 @@
 library(shiny)
 library(mapview)
+library(leaflet)
 library(raster)
 library(shinyBS)
 library(shinyjs)
@@ -133,6 +134,6 @@ geogsub <- function(latlong,watershedlevel,metalOfInterest){
   
   }
 
-#geogsub('36.35, -78.965',huc8,'magnesium')
+#geogsub('36.8, -78.965',huc8,'magnesium')
 #geogsub('37.265, -78.56',Ecoregions,'iron')
 #geogsub('37.265, -78.56',Superbasins,'iron')

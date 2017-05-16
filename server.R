@@ -1,4 +1,10 @@
 source('global.R')
+# Change back to style=basic
+
+
+
+
+
 
 # Upload GIS data here to avoid uploading it twice (if it were in the global.R file)
 Ecoregions <- readOGR('data','vaECOREGIONlevel3__proj84')
@@ -16,7 +22,7 @@ shinyServer(function(input, output, session) {
   ## Map ## Went with leaflet in the end over mapview
   output$GageMap <- renderLeaflet({
     if(input$targetlocation==""){
-      leaflet()%>%addProviderTiles('Thunderforest.Landscape')%>%addMouseCoordinates()%>%
+      leaflet()%>%addProviderTiles('Thunderforest.Landscape')%>%addMouseCoordinates()%>%#style='basic')%>%
         addHomeButton(extent(gageInfo), "Virginia Gages")%>%
         addCircleMarkers(data=gageInfo,radius=6,color=~'blue',stroke=F,
                          fillOpacity=0.5,group='gages',layerId=~GageNo,
@@ -25,7 +31,7 @@ shinyServer(function(input, output, session) {
     else{
       target_pos = geocode(input$targetlocation)
 
-      leaflet()%>%addProviderTiles('Thunderforest.Landscape')%>%addMouseCoordinates()%>%
+      leaflet()%>%addProviderTiles('Thunderforest.Landscape')%>%addMouseCoordinates()%>%#style='basic')%>%
         setView(lng=target_pos$lon,lat=target_pos$lat,zoom=10)%>%
         #addHomeButton(extent(gageInfo), "Virginia Gages")%>%
         addCircleMarkers(data=gageInfo,radius=6,color=~'blue',stroke=F,
@@ -104,7 +110,8 @@ shinyServer(function(input, output, session) {
     leaflet(metalsSites) %>% addProviderTiles('Thunderforest.Landscape') %>%
       fitBounds(~min(LongitudeDD),~min(LatitudeDD),~max(LongitudeDD),~max(LatitudeDD))%>%
       #fitBounds(metalsSites1@bbox)
-      addMouseCoordinates()%>%addHomeButton(extent(metalsSites1), "Virginia")
+      addMouseCoordinates()%>%#style='basic')%>%
+      addHomeButton(extent(metalsSites1), "Virginia")
   })
   
   # Subset metals CDF data based on user metal and subpopulation #
@@ -207,8 +214,8 @@ shinyServer(function(input, output, session) {
               extensions = 'Buttons', escape=F, rownames = F,
               options=list(dom='Bt',
                            buttons=list('copy',
-                           list(extend='csv',filename=paste('BackgroundMetals_',input$metalToPlot,Sys.Date(),sep='')),
-                           list(extend='excel',filename=paste('BackgroundMetals_',input$metalToPlot,Sys.Date(),sep='')))))})                         
+                           list(extend='csv',filename=paste('BackgroundWeightedMetals_',input$metalToPlot,Sys.Date(),sep='')),
+                           list(extend='excel',filename=paste('BackgroundWeightedMetals_',input$metalToPlot,Sys.Date(),sep='')))))})                         
   
   # All Stats Summary table #
   allstats <- reactive({
@@ -295,7 +302,8 @@ shinyServer(function(input, output, session) {
   output$unweightedMap <- renderLeaflet({
     if(input$targetlocationUN==""){
       leaflet() %>% addProviderTiles('Thunderforest.Landscape') %>%
-        addMouseCoordinates()%>%addHomeButton(extent(metalsSites1), "Virginia")%>%
+        addMouseCoordinates()%>%#style='basic')%>%
+        addHomeButton(extent(metalsSites1), "Virginia")%>%
         addCircleMarkers(data=metalsSites1,radius=6,
                          color=~'black',stroke=F,fillOpacity=0.5,
                          group='selectedSites_UN',layerId=~StationID_Trend,
@@ -305,7 +313,7 @@ shinyServer(function(input, output, session) {
     }else{
       target_pos = geocode(input$targetlocationUN)
       
-      leaflet()%>%addProviderTiles('Thunderforest.Landscape')%>%addMouseCoordinates()%>%
+      leaflet()%>%addProviderTiles('Thunderforest.Landscape')%>%addMouseCoordinates()%>%#style='basic')%>%
         setView(lng=target_pos$lon,lat=target_pos$lat,zoom=10)%>%
         addCircleMarkers(data=metalsSites1,radius=6,
                          color=~'black',stroke=F,fillOpacity=0.5,
@@ -373,30 +381,96 @@ shinyServer(function(input, output, session) {
   
   ## grey out runStats button until both fields are filled in ##
   observe({
-    shinyjs::toggleState('runStats', input$facilityUN !="" && input$metalToPlotUN != "No Metals")
+    lat <- as.numeric(gsub(" ","",strsplit(input$facilityUN,",")[[1]][1]))
+    lng <- as.numeric(gsub(" ","",strsplit(input$facilityUN,",")[[1]][2]))
+    shinyjs::toggleState('runStats', input$facilityUN !="" && input$metalToPlotUN != "No Metals" &&
+                           sum(findInterval(lat,bbox(Superbasins)[2,]),findInterval(lng,bbox(Superbasins)[1,]))>1)
   })
   
 
   basin <- eventReactive(input$runStats,{
     geogsub(input$facilityUN,Superbasins,input$metalToPlotUN)})
-  output$basinTable <- renderTable({basin()})
+  output$basinTable <- DT::renderDataTable({
+    if(is.null(basin()))
+      return(NULL)
+    datatable(basin(),
+              extensions = 'Buttons', escape=F, rownames = F,
+              options=list(dom='Bt',
+                           buttons=list('copy',
+                                        list(extend='csv',filename=paste('BackgroundUnweightedMetals_',input$metalToPlotUN,Sys.Date(),sep='')),
+                                        list(extend='excel',filename=paste('BackgroundUnweightedMetals_',input$metalToPlotUN,Sys.Date(),sep='')))))})
   
   eco <- eventReactive(input$runStats,{
     x <- geogsub(input$facilityUN,Ecoregions,input$metalToPlotUN)
     if(nrow(x)>0){return(x%>%rename(Ecoregion=Watershed))}else{return(x)}})
-  output$ecoTable <- renderTable({eco()})
+  output$ecoTable <- DT::renderDataTable({
+    if(is.null(eco()))
+      return(NULL)
+    datatable(eco(),
+              extensions = 'Buttons', escape=F, rownames = F,
+              options=list(dom='Bt',
+                           buttons=list('copy',
+                                        list(extend='csv',filename=paste('BackgroundUnweightedMetals_',input$metalToPlotUN,Sys.Date(),sep='')),
+                                        list(extend='excel',filename=paste('BackgroundUnweightedMetals_',input$metalToPlotUN,Sys.Date(),sep='')))))})
   
   huc <- eventReactive(input$runStats,{
     geogsub(input$facilityUN,huc8,input$metalToPlotUN)})
-  output$huc8Table <- renderTable({huc()})
+  output$huc8Table <- DT::renderDataTable({
+    if(is.null(huc()))
+      return(NULL)
+    datatable(huc(),
+              extensions = 'Buttons', escape=F, rownames = F,
+              options=list(dom='Bt',
+                           buttons=list('copy',
+                                        list(extend='csv',filename=paste('BackgroundUnweightedMetals_',input$metalToPlotUN,Sys.Date(),sep='')),
+                                        list(extend='excel',filename=paste('BackgroundUnweightedMetals_',input$metalToPlotUN,Sys.Date(),sep='')))))})
   
-  #
-  # Subset metals unweighted data based on user metal #
-  #metalsUN_DataSelect <- reactive({
-  #  if(input$metalToPlotUN=="No Metals")
-  #    return(NULL)
-  #  df <- filter(metalsSites_long,metal==toupper(input$metalToPlotUN))
+  
+  
+  
+  # All Stats Summary table #
+  #allstatsUN <- reactive({
+  #  
+  #  
   #})
+  
+  ## grey out reviewstatsUN button until both fields are filled in ##
+  observe({
+    lat <- as.numeric(gsub(" ","",strsplit(input$facilityUN,",")[[1]][1]))
+    lng <- as.numeric(gsub(" ","",strsplit(input$facilityUN,",")[[1]][2]))
+    shinyjs::toggleState('reviewstatsUN', input$facilityUN !="" && input$metalToPlotUN != "No Metals" &&
+                           sum(findInterval(lat,bbox(Superbasins)[2,]),findInterval(lng,bbox(Superbasins)[1,]))>1)
+  })
+  
+  # Modal preview of data to knit to report #
+  observeEvent(input$reviewstatsUN,{
+    showModal(modalDialog(
+      title="Statistics for all metals (Preview)",
+      h5("For faster app rendering, this is just a preview  of your selected data.",
+         span(strong("Click the 'Send to Report' button to review the entire dataset."))),
+      hr(),
+      tableOutput('allstatstableUN'),
+      br(),
+      downloadButton('knitUN','Send to Report'),
+      easyClose = TRUE
+    ))
+  })
+  
+  
+  
+  ##---------------------------------------RMARKDOWN SECTION----------------------------------------------
+  
+  output$knitUN <- downloadHandler(
+    'UnweightedResults.html',
+    content= function(file){
+      tempReport <- file.path(tempdir(), "UnweightedreportHTML.Rmd")
+      file.copy("UnweightedreportHTML.Rmd",tempReport,overwrite=T)
+      params <- list(table_allstats=allstats())
+      
+      rmarkdown::render(tempReport,output_file= file,
+                        params=params, envir=new.env(parent=globalenv()))})
+  ##------------------------------------------------------------------------------------------------------
+  
   
   
   

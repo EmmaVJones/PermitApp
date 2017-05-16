@@ -31,14 +31,16 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                                                             selectInput('metalToPlotUN',label=strong('Choose a Metal'),
                                                                                                         choices=c("No Metals",capwords(tolower(levels(metalsSites_long$metal)))))),
                                                                                      column(4,
-                                                                                            actionButton('runStats',"Plot Facility and Run Statistics"))),
+                                                                                            actionButton('runStats',"Plot Facility and Run Statistics"),
+                                                                                            br(),br(),
+                                                                                            actionButton('reviewstatsUN',"Review Statistics for all metals",class='btn-block'))),
                                                                             br(),br(),
                                                                             fluidRow(column(3,h6(strong('Superbasin Statistics'))),
-                                                                                     column(9,tableOutput('basinTable'))),
+                                                                                     column(9,DT::dataTableOutput('basinTable'))),
                                                                             fluidRow(column(3,h6(strong('Ecoregion Statistics'))),
-                                                                                     column(9,tableOutput('ecoTable'))),
+                                                                                     column(9,DT::dataTableOutput('ecoTable'))),
                                                                             fluidRow(column(3,h6(strong('Superbasin Statistics'))),
-                                                                                     column(9,tableOutput('huc8Table')))
+                                                                                     column(9,DT::dataTableOutput('huc8Table')))
                                                                           )
                                                                           
                                                                    )))
