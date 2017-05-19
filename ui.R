@@ -22,7 +22,9 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                                           p("Use this section to help analyze background metals data for inclusion in forthcoming faciliy permit. 
                                                                             Type the facility's",strong("latitude")," and ",strong("longitude")," into the input box to add a marker 
                                                                             to the map at the permit location. ",strong("Remember to use a comma between latitude and longitude.")," Then review the layers available on the interactive map to select a 
-                                                                            scale for analysis. You can adjust these as often as you like to analze the data at different resolutions."),
+                                                                            scale for analysis. You can adjust these as often as you like to analze the data at different resolutions. Note: if 
+                                                                            the run statistics buttons are not available that means your latitude and longitude are not within the available
+                                                                            data layers."),
                                                                           wellPanel(
                                                                             h5(strong("Unweighted Statistics")),
                                                                             fluidRow(column(4,

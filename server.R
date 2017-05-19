@@ -402,7 +402,7 @@ shinyServer(function(input, output, session) {
   
   eco <- eventReactive(input$runStats,{
     x <- geogsub(input$facilityUN,Ecoregions,input$metalToPlotUN)
-    if(nrow(x)>0){return(x%>%rename(Ecoregion=Watershed))}else{return(x)}})
+    if(nrow(x)>0){return(x%>%dplyr::rename(Ecoregion=Watershed))}else{return(x)}})
   output$ecoTable <- DT::renderDataTable({
     if(is.null(eco()))
       return(NULL)
@@ -429,10 +429,27 @@ shinyServer(function(input, output, session) {
   
   
   # All Stats Summary table #
-  #allstatsUN <- reactive({
-  #  
-  #  
-  #})
+  allstatsUN <- reactive({
+    if(is.null(basin()))
+      return(NULL)
+    basin1 <- basin()$Watershed[1]
+    eco1 <- eco()$Ecoregion[1]
+    huc1 <- huc()$Watershed[1]
+    basin2 <- filter(allstatsdataUN,Population %in% basin1)#c(basin1,eco1,huc1))
+    eco2 <- filter(allstatsdataUN,Population %in% eco1)
+    huc2 <- filter(allstatsdataUN,Population %in% huc1)
+    return(rbind(basin2,eco2,huc2)%>%arrange(Metal))
+   })
+  
+  # Facility location for output report #
+  facilityloc <- reactive({
+    if(is.null(input$facilityUN))
+      return(NULL)
+    lat <- as.numeric(gsub(" ","",strsplit(input$facilityUN,",")[[1]][1]))
+    lng <- as.numeric(gsub(" ","",strsplit(input$facilityUN,",")[[1]][2]))
+    return(paste(lat,lng,sep=' , '))
+  })
+  
   
   ## grey out reviewstatsUN button until both fields are filled in ##
   observe({
@@ -456,6 +473,12 @@ shinyServer(function(input, output, session) {
     ))
   })
   
+  output$allstatstableUN <- renderTable({
+    df <- allstatsUN()[1:10,1:7]
+    df$n <- format(df$n,digits=1)
+    names(df) <- c('Metal','population','n','5%','10%','25%','50%')
+    return(df)
+  })
   
   
   ##---------------------------------------RMARKDOWN SECTION----------------------------------------------
@@ -465,7 +488,7 @@ shinyServer(function(input, output, session) {
     content= function(file){
       tempReport <- file.path(tempdir(), "UnweightedreportHTML.Rmd")
       file.copy("UnweightedreportHTML.Rmd",tempReport,overwrite=T)
-      params <- list(table_allstats=allstats())
+      params <- list(table_allstatsUN=allstatsUN(),facilitylocation=facilityloc())
       
       rmarkdown::render(tempReport,output_file= file,
                         params=params, envir=new.env(parent=globalenv()))})

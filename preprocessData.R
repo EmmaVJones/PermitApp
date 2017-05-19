@@ -86,7 +86,7 @@ saveRDS(metalsSites,'data/MetalsSites.RDS')
 saveRDS(metalsSites_long,'data/MetalsSites_long.RDS')
 
 
-# Update all stats to easily call in the app
+# Update all weighted stats to easily call in the app
 df <- data.frame(Metal=NA,Subpopulation=NA,n=NA,x5=NA,x10=NA,x25=NA,x50=NA,x75=NA,x90=NA,x95=NA)
 datalist <- list()
 
@@ -104,3 +104,43 @@ for(i in 1:length(levels(metalsCDF$Indicator))){
 }
 allstatsdata <- do.call(rbind,datalist)
 saveRDS(allstatsdata,'data/allstatsdata.RDS')
+
+
+# Update all UNweighted stats to easily call in the app
+df <- data.frame(Metal=NA,Population=NA,n=NA,x5=NA,x10=NA,x25=NA,x50=NA,x75=NA,x90=NA,x95=NA)
+allstats <- data.frame(Metal=NA,Population=NA,n=NA,x5=NA,x10=NA,x25=NA,x50=NA,x75=NA,x90=NA,x95=NA)
+datalist <- list()
+
+
+for(i in 1:length(levels(metalsCDF$Indicator))){
+  onemetal <- filter(metalsSites_long,metal==as.character(levels(metalsCDF$Indicator)[i]),
+                     category=='Basin')# there are 3 of each record, filter to Basin to just get 1
+  for(j in 1:3){
+    geog <- c(Superbasins,Ecoregions,huc8)[j]
+    for(k in 1:nrow(geog[[1]]@data)){
+    # identify which polygon to clip metalsSites1 based on point location
+    poly  <- geog[[1]][k,]
+    #  clip metalsSites1 to poly
+    metalsSites2 <- metalsSites1[poly,]
+    # subset metalsSites_long by sites identified by watershed clip
+    toclip <- metalsSites2@data$StationID
+    metalsSites3 <- filter(onemetal,StationID %in% toclip)
+    x <- as.data.frame(signif(quantile(metalsSites3$metal_value,
+                                       probs=c(0.05,0.1,0.25,0.5,0.75,0.9,0.95),
+                                       na.rm=T),3))
+    x <- mutate(x,Percentile=rownames(x))
+    names(x)[1] <- 'Value'
+    # rearrange so it makes sense
+    xwide <- spread(x,Percentile,Value)%>%select(one_of("5%","10%","25%", "50%","75%","90%","95%"))%>%
+      mutate(Population1=poly@data$NAME,n=sum(!is.na(metalsSites3$metal_value)))%>%select(Population1,n,everything())
+    if(length(poly@data)>2){
+      xwide$Population1 <- paste(xwide$Population," (",poly@data$CU,")",sep="")}
+    xwide <- mutate(xwide,Metal=as.character(onemetal$metal[1]),Population=as.character(Population1))%>%
+      select(Metal,Population,everything())%>%select(-Population1)
+    df[k,] <- xwide}
+  datalist[[j]] <- df}
+  allstats <- rbind(allstats,do.call(rbind,datalist))
+}
+
+allstatsdataUN <- unique(allstats)%>%filter(!is.na(Metal))
+saveRDS(allstatsdataUN,'data/allstatsdataUN.RDS')

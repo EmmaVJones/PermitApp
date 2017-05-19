@@ -41,6 +41,7 @@ metalsSites_long <- readRDS('data/MetalsSites_long.RDS')
 
 
 allstatsdata <- readRDS('data/allstatsdata.RDS')
+allstatsdataUN <- readRDS('data/allstatsdataUN.RDS')
 
 
 ## Functions
@@ -98,7 +99,7 @@ populationSummary <- function(dataset,metal,subpopulation){
                       x90=vlookup(90,dataset2,2,range=T),x95=vlookup(95,dataset2,2,range=T))
   return(stats)
 }
-#latlong <-'36.35, -78.965'
+#latlong <-'36.65, -78.965'
 #watershedlevel <- huc8
 #metalOfInterest <- 'magnesium'
 
@@ -129,7 +130,8 @@ geogsub <- function(latlong,watershedlevel,metalOfInterest){
     xwide <- spread(x,Percentile,Value)%>%select(one_of("5%","10%","25%", "50%","75%","90%","95%"))%>%
       mutate(Watershed=poly@data$NAME,n=sum(!is.na(metalsSites3$metal_value)))%>%select(Watershed,n,everything())
     if(length(poly@data)>2){
-      xwide <- mutate(xwide,HUC8=poly@data$CU)%>%select(Watershed,HUC8,everything())}
+      xwide$Watershed <- paste(xwide$Watershed," (",poly@data$CU,")",sep="")}
+      #xwide <- mutate(xwide,HUC8=poly@data$CU)%>%select(Watershed,HUC8,everything())}
     return(xwide)}
   
   }
