@@ -5,48 +5,41 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                     ), 
                   shinyjs::useShinyjs(),
                   navbarPage('VDEQ Permit Tool',
-                             navbarMenu("Background Metals Analysis",
-                                        tabPanel("Targeted Monitoring (Unweighted) Data",
+                             tabPanel('About',fluidRow(column(10,
+                                                              h5("This tool was created to assist VDEQ  staff in the permit review process."),
+                                                              p("Other stuff.")))),
+                             navbarMenu("Flow Analysis",
+                                        tabPanel("Stream Gage Selection",
                                                  bootstrapPage(div(class="outer",
                                                                    tags$style(type ="text/css",".outer {position: fixed; top: 75px; left: 0; right: 0; bottom: 0; overflow-y: scroll; padding: 0}"),
-                                                                   column(11,wellPanel(h4('This section uses all monitoring data available from the Probabilistic Monitoring programs, 
-                                                                             facilities, and targeted monitoring stations, thus results from this page are unweighted 
-                                                                             and represent the extent of monitored sites statewide.'))),
-                                                                   leafletOutput("unweightedMap"),
-                                                                   absolutePanel(top=150, left=60, draggable = F,bottom="auto",height=80,width=205,
-                                                                                 textInput('targetlocationUN',"Search by Location",placeholder="Example: 37.564, -79.045"),
-                                                                                 wellPanel(checkboxInput('supaBshape','Plot Superbasins',value=F),
-                                                                                 checkboxInput('ecoshape','Plot Ecoregions',value=F),
-                                                                                 checkboxInput('hucshape','Plot HUC8 Watersheds',value=F),style='padding: 3px;')),
+                                                                   column(4,textInput('targetlocation',"Search by Location",placeholder="Example: 37.564, -79.045")),
+                                                                   leafletOutput("GageMap"),#, width="75%", height="100%"),
+                                                                   #absolutePanel(top=20, left=70, textInput('targetlocation',"Search by Location",placeholder="Example: 37.564, -79.045")),
                                                                    column(11,
-                                                                          p("Use this section to help analyze background metals data for inclusion in forthcoming faciliy permit. 
-                                                                            Type the facility's",strong("latitude")," and ",strong("longitude")," into the input box to add a marker 
-                                                                            to the map at the permit location. ",strong("Remember to use a comma between latitude and longitude.")," Then review the layers available on the interactive map to select a 
-                                                                            scale for analysis. You can adjust these as often as you like to analze the data at different resolutions. Note: if 
-                                                                            the run statistics buttons are not available that means your latitude and longitude are not within the available
-                                                                            data layers."),
-                                                                          wellPanel(
-                                                                            h5(strong("Unweighted Statistics")),
-                                                                            fluidRow(column(4,
-                                                                                            textInput('facilityUN','Facility:',placeholder='Latitude, Longitude')),
-                                                                                     column(4,
-                                                                                            selectInput('metalToPlotUN',label=strong('Choose a Metal'),
-                                                                                                        choices=c("No Metals",capwords(tolower(levels(metalsSites_long$metal)))))),
-                                                                                     column(4,
-                                                                                            actionButton('runStats',"Plot Facility and Run Statistics"),
-                                                                                            br(),br(),
-                                                                                            actionButton('reviewstatsUN',"Review Statistics for all metals",class='btn-block'))),
-                                                                            br(),br(),
-                                                                            fluidRow(column(3,h6(strong('Superbasin Statistics'))),
-                                                                                     column(9,DT::dataTableOutput('basinTable'))),
-                                                                            fluidRow(column(3,h6(strong('Ecoregion Statistics'))),
-                                                                                     column(9,DT::dataTableOutput('ecoTable'))),
-                                                                            fluidRow(column(3,h6(strong('Superbasin Statistics'))),
-                                                                                     column(9,DT::dataTableOutput('huc8Table')))
-                                                                          )
-                                                                          
-                                                                   )))
-                                        ),
+                                                                          h5('Instructions:'),
+                                                                          p('Review the map of current USGS gages for comparison to your watershed. You can zoom to a specific site or
+                                                          simply scroll with your mouse. Clicking on a gage will bring up additional attributes and a link to the NWIS
+                                                          site to review current flow data.'),
+                                                                          p('Choose up to four gages to review compare to your watershed. Use the drop down box to select which gages you 
+                                                           want to review after you have identified them on the map. Gage numbers are listed both in the attribute table 
+                                                           as well as directly above the drop down menu.')),
+                                                                   
+                                                                   column(4,fluidRow(
+                                                                     wellPanel(textOutput('gageText'),
+                                                                               helpText('Use the drop down to select up to four gages to review further. You can scroll
+                                                                             through the list or begin to type the gage number you want to keep to see a filtered
+                                                                             list of gages based on your input.'),
+                                                                               selectizeInput('gageList',h5(strong('Gages to Review')),choices=gageInfo@data$GageNo,multiple=T))
+                                                                   )),
+                                                                   column(6,
+                                                                          tableOutput('gageInfoTable')
+                                                                   )))),
+                                        
+                                        tabPanel("Stream Gage Statistics",
+                                                 h5('Selected Gages'),
+                                                 tableOutput('gageInfoTable2')
+                                        )),
+                             navbarMenu("Background Metals Analysis",
                                         tabPanel("Probablilistic Monitoring (Weighted) Data",
                                                  bootstrapPage(div(class="outer",
                                                                    tags$style(type ="text/css",".outer {position: fixed; top: 75px; left: 0; right: 0; bottom: 0; overflow-y: scroll; padding: 0}"),
@@ -110,42 +103,49 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                                                                                   "Third Order","Fourth Order","Fifth Order")))
                                                                           )),
                                                                   DT::dataTableOutput('weightedMetalsTable'))
-                                                               ))
-                                        ),
-                             navbarMenu("Flow Analysis",
-                                        tabPanel("Stream Gage Selection",
+                                                               )),
+                                        tabPanel("Targeted Monitoring (Unweighted) Data",
                                                  bootstrapPage(div(class="outer",
                                                                    tags$style(type ="text/css",".outer {position: fixed; top: 75px; left: 0; right: 0; bottom: 0; overflow-y: scroll; padding: 0}"),
-                                                                   column(4,textInput('targetlocation',"Search by Location",placeholder="Example: 37.564, -79.045")),
-                                                                   leafletOutput("GageMap"),#, width="75%", height="100%"),
-                                                                   #absolutePanel(top=20, left=70, textInput('targetlocation',"Search by Location",placeholder="Example: 37.564, -79.045")),
+                                                                   column(11,wellPanel(h4('This section uses all monitoring data available from the Probabilistic Monitoring programs, 
+                                                                                          facilities, and targeted monitoring stations, thus results from this page are unweighted 
+                                                                                          and represent the extent of monitored sites statewide.'))),
+                                                                   leafletOutput("unweightedMap"),
+                                                                   absolutePanel(top=150, left=60, draggable = F,bottom="auto",height=80,width=205,
+                                                                                 textInput('targetlocationUN',"Search by Location",placeholder="Example: 37.564, -79.045"),
+                                                                                 wellPanel(checkboxInput('supaBshape','Plot Superbasins',value=F),
+                                                                                           checkboxInput('ecoshape','Plot Ecoregions',value=F),
+                                                                                           checkboxInput('hucshape','Plot HUC8 Watersheds',value=F),style='padding: 3px;')),
                                                                    column(11,
-                                                                          h5('Instructions:'),
-                                                                          p('Review the map of current USGS gages for comparison to your watershed. You can zoom to a specific site or
-                                                          simply scroll with your mouse. Clicking on a gage will bring up additional attributes and a link to the NWIS
-                                                          site to review current flow data.'),
-                                                                          p('Choose up to four gages to review compare to your watershed. Use the drop down box to select which gages you 
-                                                           want to review after you have identified them on the map. Gage numbers are listed both in the attribute table 
-                                                           as well as directly above the drop down menu.')),
-                                                                   
-                                                                   column(4,fluidRow(
-                                                                     wellPanel(textOutput('gageText'),
-                                                                               helpText('Use the drop down to select up to four gages to review further. You can scroll
-                                                                             through the list or begin to type the gage number you want to keep to see a filtered
-                                                                             list of gages based on your input.'),
-                                                                               selectizeInput('gageList',h5(strong('Gages to Review')),choices=gageInfo@data$GageNo,multiple=T))
-                                                                   )),
-                                                                   column(6,
-                                                                          tableOutput('gageInfoTable')
-                                                                   )))),
-                                        
-                                        tabPanel("Stream Gage Statistics",
-                                                 h5('Selected Gages'),
-                                                 tableOutput('gageInfoTable2')
-                                        )),
-                            tabPanel('About',fluidRow(column(10,
-                                                             h5("This tool was created to assist VDEQ  staff in the permit review process."),
-                                                             p("Other stuff.")))),
+                                                                          p("Use this section to help analyze background metals data for inclusion in forthcoming faciliy permit. 
+                                                                            Type the facility's",strong("latitude")," and ",strong("longitude")," into the input box to add a marker 
+                                                                            to the map at the permit location. ",strong("Remember to use a comma between latitude and longitude.")," Then review the layers available on the interactive map to select a 
+                                                                            scale for analysis. You can adjust these as often as you like to analze the data at different resolutions. Note: if 
+                                                                            the run statistics buttons are not available that means your latitude and longitude are not within the available
+                                                                            data layers."),
+                                                                          wellPanel(
+                                                                            h5(strong("Unweighted Statistics")),
+                                                                            fluidRow(column(4,
+                                                                                            textInput('facilityUN','Facility:',placeholder='Latitude, Longitude')),
+                                                                                     column(4,
+                                                                                            selectInput('metalToPlotUN',label=strong('Choose a Metal'),
+                                                                                                        choices=c("No Metals",capwords(tolower(levels(metalsSites_long$metal)))))),
+                                                                                     column(4,
+                                                                                            actionButton('runStats',"Plot Facility and Run Statistics"),
+                                                                                            br(),br(),
+                                                                                            actionButton('reviewstatsUN',"Review Statistics for all metals",class='btn-block'))),
+                                                                            br(),br(),
+                                                                            fluidRow(column(3,h6(strong('Superbasin Statistics'))),
+                                                                                     column(9,DT::dataTableOutput('basinTable'))),
+                                                                            fluidRow(column(3,h6(strong('Ecoregion Statistics'))),
+                                                                                     column(9,DT::dataTableOutput('ecoTable'))),
+                                                                            fluidRow(column(3,h6(strong('Superbasin Statistics'))),
+                                                                                     column(9,DT::dataTableOutput('huc8Table')))
+                                                                          )
+                                                                          
+                                                                   )))
+                                                                   )
+                                        ),
                             tabPanel(HTML(" </a></li><li><a href=\'https://enviromapper.us/shiny/'>| Shiny Homepage |"))
                             
                   )
