@@ -42,11 +42,6 @@ shinyServer(function(input, output, session) {
     }
     
   })
-  #output$GageMap <- renderMapview({
-    #mapview(gageInfo, popup = popupTable(gageInfo, zcol = c("GageNo","StationName",
-    #                                                        "DrainArea","HUC8","WebAddress")))})
-
-
   
   ## Move map view to adjust with marker click ##
   observeEvent(input$GageMap_marker_click,{
@@ -64,6 +59,7 @@ shinyServer(function(input, output, session) {
     
   
   ## Populate table on gage click ##
+  ## Take click info from map ##
   observeEvent(input$GageMap_marker_click,{
     click<-input$GageMap_marker_click
     if(!is.null(click$id))
@@ -71,6 +67,7 @@ shinyServer(function(input, output, session) {
     # use cat() instead of paste() to not show line numbers
   })
   
+  ## Use click info from map to subset gageInfo ##
   userGageSelection <- reactive({
     if(is.null(input$gageList))
       return(NULL)
@@ -79,28 +76,43 @@ shinyServer(function(input, output, session) {
     return(d[1:4,1:4])
   })
   
+  ## Display subset of gageInfo ##
   output$gageInfoTable <- renderTable({
     if(is.null(userGageSelection()))
       NULL
     return(userGageSelection())
   })
   
-  #output$test <- renderPrint({as.character(userGageSelection()[,1])})
-  
+  ## Select all stats from gagestats table based on gageInfo site subset on next tab ##
   extraStats <- reactive({
     subset(gagestats,SITEID %in% as.character(userGageSelection()[,1])) %>%
       dplyr::select(SITEID:HARMEAN) # bc raster package is loaded
   })
   
-  
+  ## Display all stats from gagestats table based on gageInfo site subset on next tab ##
   output$gageInfoTable2 <- renderTable({
     if(is.null(extraStats()))
       NULL
     return(extraStats())
     })
   
+  ## Display user input formula ##
+  output$formula <- renderPrint({
+    if(is.null(input$userFormula))
+      return(NUll)
+    #withMathJax($$\\alpha^2$$)
+    #expression(input$userFormula ^ input$exponent)
+    #tags$div(HTML(paste(input$userFormula,tags$sup(input$exponent),sep="")))
+  })
   
-  
+  output$formulas <- renderUI({
+    fluidRow(
+      column(4,
+             textInput('userFormula','Type formula below', placeholder = 'y = 0.008x'),
+             textInput('exponent',"Type exponent below",placeholder='1.0854')),
+      column(4,
+             withMathJax(textOutput('formula'))))
+  })
   
   
   #-------------------------------------------------------------------------------------------
