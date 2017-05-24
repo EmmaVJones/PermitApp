@@ -85,8 +85,11 @@ shinyServer(function(input, output, session) {
   
   ## Select all stats from gagestats table based on gageInfo site subset on next tab ##
   extraStats <- reactive({
-    subset(gagestats,SITEID %in% as.character(userGageSelection()[,1])) %>%
+    flowstats <- subset(gagestats,SITEID %in% as.character(userGageSelection()[,1])) %>%
       dplyr::select(SITEID:HARMEAN) # bc raster package is loaded
+    gageStats <- subset(gageInfo@data,GageNo %in% as.character(userGageSelection()[,1]))%>%
+      mutate(SITEID=GageNo)%>%select(-c(name2,GageNo))
+    merge(gageStats,flowstats,by='SITEID')
   })
   
   ## Display all stats from gagestats table based on gageInfo site subset on next tab ##
