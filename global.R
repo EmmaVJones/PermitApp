@@ -11,6 +11,7 @@ library(rgdal)
 library(htmltools)
 library(DT)
 library(tidyr)
+library(ggplot2)
 
 
 ## Data

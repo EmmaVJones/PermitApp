@@ -7,12 +7,12 @@ source('global.R')
 
 
 # Upload GIS data here to avoid uploading it twice (if it were in the global.R file)
-Ecoregions <- readOGR('data','vaECOREGIONlevel3__proj84')
-Ecoregions@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
-Superbasins <- readOGR('data','VAsuperbasins_proj84')
-Superbasins@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
-huc8 <- readOGR('data','HUC8_wgs84')
-huc8@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+#Ecoregions <- readOGR('data','vaECOREGIONlevel3__proj84')
+#Ecoregions@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+#Superbasins <- readOGR('data','VAsuperbasins_proj84')
+#Superbasins@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+#huc8 <- readOGR('data','HUC8_wgs84')
+#huc8@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
 
 
 shinyServer(function(input, output, session) {
@@ -96,23 +96,80 @@ shinyServer(function(input, output, session) {
     return(extraStats())
     })
   
+  #-------------------------------------------------------------------------------------------
+  ## Existing Gage Correction Section
+  #-------------------------------------------------------------------------------------------
+  
+  ## UI component with MathJax ##
+  output$formulas <- renderUI({
+    fluidRow(
+      column(8,
+             fluidRow(#tags$head(tags$style(type="text/css","label.control-label, .text-control.single{ display: table-cell; text-align: center; vertical-align: middle; }  .form-group { display: table-row;}")),
+               column(8,textInput('userFormula','y = ', placeholder = 'Example: 0.008')),column(2,p('x'))),
+               textInput('power',"Type power below",placeholder='Example: 1.0854')))#,
+      #column(4,plotOutput('formulaPlot')))
+             #withMathJax(textOutput('formula'))))
+  })
+  
+  ## Grey out updateFlowStats button until userFormula and power are filled in if under 'Add Formula' radiobutton
+  observe({
+    if(input$addFormula == "Add Formula" && input$userFormula !="" && input$power != "" ||
+       input$addFormula=="No Correction"){
+      shinyjs::enable("updateFlowStats")}else{shinyjs::disable("updateFlowStats")}
+    #shinyjs::toggleState('updateFlowStats', input$addFormula == "Add Formula" && input$userFormula !="" && input$power != "")
+  })
+  
+  ## Adjust flow statistics based on user options ##
+  updatedFlowStats <- eventReactive(input$updateFlowStats,{
+    step1 <- subset(gagestats,SITEID %in% as.character(input$gageListupdatestats)) %>%
+      dplyr::select(SITEID:HARMEAN)
+    if(input$addFormula=='No Correction'){
+      step1.1 <- as.data.frame(t(step1))
+      names(step1.1) <- "Selected Gage"
+      return(step1.1)
+      }else{
+        step1[2,] <- c(SITEID=NA,sapply(step1[,2:7],function(x) (as.numeric(input$userFormula)*(x^as.numeric(input$power)))))
+        rownames(step1) <- c("Selected Gage","User Correction")
+        step2 <- as.data.frame(t(step1))
+        return(step2)}
+    
+  })
+  
+  output$adjustedFlowStats <- renderDataTable({
+    if(is.null(updatedFlowStats()))
+      return(NULL)
+    datatable(updatedFlowStats(),rownames = T,extensions = 'Buttons', escape=F,
+              options=list(dom='Bt',
+                           buttons=list('copy',
+                                        list(extend='csv',filename=paste('UpdatedFlowStatistics_',input$gageListupdatestats,Sys.Date(),sep='')),
+                                        list(extend='excel',filename=paste('UpdatedFlowStatistics_',input$gageListupdatestats,Sys.Date(),sep='')))))
+    
+  })
+  
+  
+  
   ## Display user input formula ##
-  output$formula <- renderPrint({
-    if(is.null(input$userFormula))
-      return(NUll)
+  #output$formulaPlot <- renderPlot({
+  #  if(is.null(input$userFormula))
+  #    return(NULL)
+  #  ex <- paste(input$userFomula,"^",input$exponent)
+  #  ggplot(data.frame(x=c(0,10)),aes(x))+
+  #    stat_function(fun=function(x)0.0009*x^1.8013,geom='line')+
+  #    scale_x_log10()+scale_y_log10()+
+  #    annotation_logticks()+
+  #    annotate('text',x=10,y=1.5,label=ex, parse=T)
+      #annotate('text',x=2,y=3,label=expression(Value~is~sigma~R^{2}==0.6))
+  #})
+  
+  #output$formula <- renderPrint({
+  #  if(is.null(input$userFormula))
+  #    return(NULL)
+    #withMathJax(('$$input$userFormula^2$$'))
     #withMathJax($$\\alpha^2$$)
     #expression(input$userFormula ^ input$exponent)
     #tags$div(HTML(paste(input$userFormula,tags$sup(input$exponent),sep="")))
-  })
+  #})
   
-  output$formulas <- renderUI({
-    fluidRow(
-      column(4,
-             textInput('userFormula','Type formula below', placeholder = 'y = 0.008x'),
-             textInput('exponent',"Type exponent below",placeholder='1.0854')),
-      column(4,
-             withMathJax(textOutput('formula'))))
-  })
   
   
   #-------------------------------------------------------------------------------------------

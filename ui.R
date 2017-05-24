@@ -6,10 +6,25 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                   withMathJax(),
                   shinyjs::useShinyjs(),
                   navbarPage('VDEQ Permit Tool',
-                             tabPanel('About',fluidRow(column(10,
-                                                              h5("This tool was created to assist VDEQ  staff in the permit review process."),
-                                                              p("Other stuff.")))),
                              navbarMenu("Flow Analysis",
+                                        tabPanel("Existing Facility: Update Stream Gage Statistics",
+                                                 h5('Instructions'),
+                                                 p('Use this tab to update stream gage statistics. First select the gage statistics you wish
+                                                    to update. Then, you can either accept the gage information or apply a correction to the 
+                                                    gage based on a previous flow frequency analysis.'),
+                                                 fluidRow(
+                                                   column(4,
+                                                          selectizeInput('gageListupdatestats',h5(strong('Gage to update')),choices=gageInfo@data$GageNo,selected= NA, multiple=F),
+                                                          radioButtons("addFormula","Gage Statistics",c("No Correction","Add Formula"),selected = "No Correction",inline=T),
+                                                          conditionalPanel("input.addFormula == 'Add Formula'",
+                                                                           uiOutput('formulas')),
+                                                          actionButton('updateFlowStats',"Update flow statistics"))),
+                                                 br(),  
+                                                 column(6,
+                                                          DT::dataTableOutput('adjustedFlowStats'))
+                                                 
+                                                 
+                                        ),
                                         tabPanel("New Facility: Stream Gage Selection",
                                                  bootstrapPage(div(class="outer",
                                                                    tags$style(type ="text/css",".outer {position: fixed; top: 75px; left: 0; right: 0; bottom: 0; overflow-y: scroll; padding: 0}"),
@@ -38,17 +53,8 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                         
                                         tabPanel("New Facility: Stream Gage Statistics",
                                                  h5('Selected Gages'),
-                                                 tableOutput('gageInfoTable2')),
-                                        tabPanel("Existing Facility: Update Stream Gage Statistics",
-                                                 h5('Instructions'),
-                                                 p('Use this tab to update stream gage statistics. First select the gage statistics you wish
-                                                    to update. Then, you can either accept the gage information or apply a correction to the 
-                                                    gage based on a previous flow frequency analysis.'),
-                                                 selectizeInput('gageListupdatestats',h5(strong('Gage to update')),choices=gageInfo@data$GageNo,multiple=F),
-                                                 radioButtons("addFormula","Gage Statistics",c("No Correction","Add Formula"),selected = "No Correction",inline=T),
-                                                 conditionalPanel("input.addFormula == 'Add Formula'",
-                                                                  uiOutput('formulas'))
-                                                                  )
+                                                 tableOutput('gageInfoTable2'))
+                                        
                                                    
                                         
                                                  
@@ -160,6 +166,10 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                                    )))
                                                                    )
                                         ),
+                             tabPanel('About',fluidRow(column(10,
+                                                              h5("This tool was created to assist VDEQ  staff in the permit review process."),
+                                                              p("Other stuff.")))),
+                             
                             tabPanel(HTML(" </a></li><li><a href=\'https://enviromapper.us/shiny/'>| Shiny Homepage |"))
                             
                   )
