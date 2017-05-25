@@ -16,6 +16,10 @@ source('global.R')
 
 
 shinyServer(function(input, output, session) {
+  # -----------------------------------------------------------------------------------------------------
+  ## New Facility Section ##
+  #-------------------------------------------------------------------------------------------------------
+  
   activeDot <- function(map,x,y){addCircleMarkers(map,x,y,radius=6,color='blue',fillColor = 'yellow',
                                                   fillOpacity = 1,opacity=1,weight = 2,stroke=T,layerId = 'Selected')}
   
@@ -98,6 +102,60 @@ shinyServer(function(input, output, session) {
       NULL
     return(extraStats())
     })
+  
+  output$gageSelection <- renderUI({
+    fluidRow(column(8,
+                    checkboxGroupInput('gagesToSelect',"Select all gages you wish to use for subsequent correlation analysis.",
+                                  choices=extraStats()$SITEID)),
+             column(4,actionButton("getGageData","Get Gage Data")))
+  })
+  
+  ## Make a reactive element to save dataframe result from the gage selection process ##
+  values <- reactiveValues(df_data=NULL)
+  
+  ## Go out and get gage data on user click ##
+  observeEvent(input$getGageData,{
+    gages <- paste(input$gagesToSelect, collapse = ", ")
+    gageList <- strsplit(gages,',')
+    
+    Daily1 <- readNWISdv(trimws(gageList[[1]][1],'b'),"00060","",Sys.Date())%>%
+      filter(X_00060_00003_cd != 'P')%>%select(Date,X_00060_00003)
+    names(Daily1)[2] <- paste(gageList[[1]][1],"Mean Daily Flow (cfs)",sep=" ")
+    combine <- Daily1
+    if(length(gageList[[1]])>1){
+      Daily2 <- readNWISdv(trimws(gageList[[1]][2],'b'),"00060","",Sys.Date())%>%
+        filter(X_00060_00003_cd != 'P')%>%select(Date,X_00060_00003)
+      names(Daily2)[2] <- paste(gageList[[1]][2],"Mean Daily Flow (cfs)",sep=" ")
+      combine <- merge(Daily1,Daily2,by='Date')}
+    if(length(gageList[[1]])>2){
+      Daily3 <- readNWISdv(trimws(gageList[[1]][3],'b'),"00060","",Sys.Date())%>%
+        filter(X_00060_00003_cd != 'P')%>%select(Date,X_00060_00003)
+      names(Daily3)[2] <- paste(gageList[[1]][3],"Mean Daily Flow (cfs)",sep=" ")
+      combine <- merge(combine,Daily3,by='Date')}
+    if(length(gageList[[1]])>3){
+      Daily4 <- readNWISdv(trimws(gageList[[1]][4],'b'),"00060","",Sys.Date())%>%
+        filter(X_00060_00003_cd != 'P')%>%select(Date,X_00060_00003)
+      names(Daily4)[2] <- paste(gageList[[1]][4],"Mean Daily Flow (cfs)",sep=" ")
+      combine <- merge(combine,Daily4,by='Date')}
+    values$df_data <- combine # make it available outside observeEvent()
+    
+  })
+    
+    
+    output$gageData <- renderDataTable({
+      if(is.null(values$df_data))
+        return(NULL)
+      values$df_data$Date <- as.Date(values$df_data$Date)
+      datatable(values$df_data,rownames = F,extensions = 'Buttons', escape=F,
+                  options=list(dom='Btlp',
+                               lengthMenu= list(c(10,25,-1),c('10','25','All')),
+                               buttons=list('copy',
+                                            list(extend='csv',filename=paste('FlowComparison_',paste(input$gagesToSelect, collapse = "_"),Sys.Date(),sep='')),
+                                            list(extend='excel',filename=paste('FlowComparison_',paste(input$gagesToSelect, collapse = "_"),Sys.Date(),sep='')))))})
+    
+  
+  
+  
   
   #-------------------------------------------------------------------------------------------
   ## Existing Gage Correction Section

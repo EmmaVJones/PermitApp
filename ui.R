@@ -7,8 +7,63 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                   shinyjs::useShinyjs(),
                   navbarPage('VDEQ Permit Tool',
                              navbarMenu("Flow Analysis",
+                                        tabPanel("New Facility",
+                                                 tabsetPanel(
+                                                   tabPanel("Stream Gage Selection",
+                                                            bootstrapPage(div(class="outer",
+                                                                              tags$style(type ="text/css",".outer {position: fixed; top: 75px; left: 0; right: 0; bottom: 0; overflow-y: scroll; padding: 0}"),
+                                                                              br(),br(),
+                                                                              column(4,textInput('targetlocation',"Search by Location",placeholder="Example: 37.564, -79.045")),
+                                                                              leafletOutput("GageMap"),#, width="75%", height="100%"),
+                                                                              #absolutePanel(top=20, left=70, textInput('targetlocation',"Search by Location",placeholder="Example: 37.564, -79.045")),
+                                                                              column(11,
+                                                                                     h5(strong('Instructions:')),
+                                                                                     p('Review the map of current USGS gages for comparison to your watershed. You can zoom to a specific site or
+                                                          simply scroll with your mouse. Clicking on a gage will bring up additional attributes and a link to the NWIS
+                                                          site to review current flow data.'),
+                                                                                     p('Choose up to four gages to review compare to your watershed. Use the drop down box to select which gages you 
+                                                           want to review after you have identified them on the map. Gage numbers are listed both in the attribute table 
+                                                           as well as directly above the drop down menu.')),
+                                                                              
+                                                                              column(4,fluidRow(
+                                                                                wellPanel(textOutput('gageText'),
+                                                                                          helpText('Use the drop down to select up to four gages to review further. You can scroll
+                                                                             through the list or begin to type the gage number you want to keep to see a filtered
+                                                                             list of gages based on your input.'),
+                                                                                          selectizeInput('gageList',h5(strong('Gages to Review')),choices=gageInfo@data$GageNo,multiple=T))
+                                                                              )),
+                                                                              column(6,
+                                                                                     tableOutput('gageInfoTable')
+                                                                              )))),
+                                                   tabPanel("Stream Gage Statistics",
+                                                            h5('Selected Gages'),
+                                                            tableOutput('gageInfoTable2'),
+                                                            br(),hr(),br(),
+                                                            h5(strong("Instructions:")),
+                                                            span(p("Based on the results above, please select up to four stream gages, using the checkboxes below, to utilize in a correlation 
+                                                              analysis. Once you have made your selection, press the 'Get Gage Data' button. The app will pull mean daily discharge
+                                                              data from each of the selected gages. Proceed to the 'Correlation Analysis' tab to review data and compare 
+                                                              gage data to a target stream."),strong("Note:"),p("The records are merged by date among all the selected gages
+                                                                                                  so only common dates are returned.")),
+                                                            wellPanel(uiOutput('gageSelection'))),
+                                                   tabPanel("Correlation Analysis",
+                                                            wellPanel(h5(strong('Instructions')),
+                                                                      fluidRow(
+                                                                        column(8,
+                                                                               p("Upload your target stream data for comparison to the selected gages. When you upload a 
+                                                                                 dataset (as .csv), the app will automatically merge it with the gage table below and 
+                                                                                 output correlation coefficients among the target stream and all other selected streams. 
+                                                                                 Make sure you follow the template. Click the 'Download Template' button to ensure your file
+                                                                                 is in the correct format prior to uploading it to the app.")),
+                                                                        column(4,
+                                                                               downloadButton('downloadTemplate',"Download template.csv"),
+                                                                               fileInput('userFlowData',"Upload single site (flat file)",accept = '.csv',width='100%'))),
+                                                                      DT::dataTableOutput('corrResult')),
+                                                            hr(),
+                                                            DT::dataTableOutput('gageData')),
+                                                   tabPanel("Flow Regression"))),
                                         tabPanel("Existing Facility: Update Stream Gage Statistics",
-                                                 h5('Instructions'),
+                                                 h5(strong('Instructions')),
                                                  p('Use this tab to update stream gage statistics. First select the gage statistics you wish
                                                     to update. Then, you can either accept the gage information or apply a correction to the 
                                                     gage based on a previous flow frequency analysis.'),
@@ -24,41 +79,8 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                           DT::dataTableOutput('adjustedFlowStats'))
                                                  
                                                  
-                                        ),
-                                        tabPanel("New Facility: Stream Gage Selection",
-                                                 bootstrapPage(div(class="outer",
-                                                                   tags$style(type ="text/css",".outer {position: fixed; top: 75px; left: 0; right: 0; bottom: 0; overflow-y: scroll; padding: 0}"),
-                                                                   column(4,textInput('targetlocation',"Search by Location",placeholder="Example: 37.564, -79.045")),
-                                                                   leafletOutput("GageMap"),#, width="75%", height="100%"),
-                                                                   #absolutePanel(top=20, left=70, textInput('targetlocation',"Search by Location",placeholder="Example: 37.564, -79.045")),
-                                                                   column(11,
-                                                                          h5('Instructions:'),
-                                                                          p('Review the map of current USGS gages for comparison to your watershed. You can zoom to a specific site or
-                                                          simply scroll with your mouse. Clicking on a gage will bring up additional attributes and a link to the NWIS
-                                                          site to review current flow data.'),
-                                                                          p('Choose up to four gages to review compare to your watershed. Use the drop down box to select which gages you 
-                                                           want to review after you have identified them on the map. Gage numbers are listed both in the attribute table 
-                                                           as well as directly above the drop down menu.')),
-                                                                   
-                                                                   column(4,fluidRow(
-                                                                     wellPanel(textOutput('gageText'),
-                                                                               helpText('Use the drop down to select up to four gages to review further. You can scroll
-                                                                             through the list or begin to type the gage number you want to keep to see a filtered
-                                                                             list of gages based on your input.'),
-                                                                               selectizeInput('gageList',h5(strong('Gages to Review')),choices=gageInfo@data$GageNo,multiple=T))
-                                                                   )),
-                                                                   column(6,
-                                                                          tableOutput('gageInfoTable')
-                                                                   )))),
+                                        )),
                                         
-                                        tabPanel("New Facility: Stream Gage Statistics",
-                                                 h5('Selected Gages'),
-                                                 tableOutput('gageInfoTable2'))
-                                        
-                                                   
-                                        
-                                                 
-                                        ),
                              navbarMenu("Background Metals Analysis",
                                         tabPanel("Probablilistic Monitoring (Weighted) Data",
                                                  bootstrapPage(div(class="outer",

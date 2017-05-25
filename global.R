@@ -12,6 +12,7 @@ library(htmltools)
 library(DT)
 library(tidyr)
 library(ggplot2)
+library(dataRetrieval)
 
 
 ## Data
