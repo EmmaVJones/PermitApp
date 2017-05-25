@@ -60,6 +60,8 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                                                fileInput('userFlowData',"Upload single site (flat file)",accept = '.csv',width='100%'))),
                                                                       DT::dataTableOutput('corrResult')),
                                                             hr(),
+                                                            helpText('Remember, the data displayed below is limited to the the dates common to ALL selected gages. Correlation
+                                                                     results compare the uploaded dataset to the entire gage datasets.'),
                                                             DT::dataTableOutput('gageData')),
                                                    tabPanel("Flow Regression"))),
                                         tabPanel("Existing Facility: Update Stream Gage Statistics",

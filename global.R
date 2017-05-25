@@ -16,6 +16,7 @@ library(dataRetrieval)
 
 
 ## Data
+template <- read.csv('data/template.csv')
 
 gageInfo <- readRDS('data/gageInfo.RDS')
 coordinates(gageInfo) <- ~LongDD+LatDD

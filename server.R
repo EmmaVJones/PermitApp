@@ -105,13 +105,13 @@ shinyServer(function(input, output, session) {
   
   output$gageSelection <- renderUI({
     fluidRow(column(8,
-                    checkboxGroupInput('gagesToSelect',"Select all gages you wish to use for subsequent correlation analysis.",
+                    checkboxGroupInput('gagesToSelect',"Select all gages you wish to use for subsequent correlation analyses.",
                                   choices=extraStats()$SITEID)),
              column(4,actionButton("getGageData","Get Gage Data")))
   })
   
   ## Make a reactive element to save dataframe result from the gage selection process ##
-  values <- reactiveValues(df_data=NULL)
+  values <- reactiveValues(df_data=NULL,gage1=NULL,gage2=NULL,gage3=NULL,gage4=NULL)
   
   ## Go out and get gage data on user click ##
   observeEvent(input$getGageData,{
@@ -122,40 +122,69 @@ shinyServer(function(input, output, session) {
       filter(X_00060_00003_cd != 'P')%>%select(Date,X_00060_00003)
     names(Daily1)[2] <- paste(gageList[[1]][1],"Mean Daily Flow (cfs)",sep=" ")
     combine <- Daily1
+    values$gage1 <- Daily1 # make it available outside observeEvent()
     if(length(gageList[[1]])>1){
       Daily2 <- readNWISdv(trimws(gageList[[1]][2],'b'),"00060","",Sys.Date())%>%
         filter(X_00060_00003_cd != 'P')%>%select(Date,X_00060_00003)
       names(Daily2)[2] <- paste(gageList[[1]][2],"Mean Daily Flow (cfs)",sep=" ")
+      values$gage2 <- Daily2 # make it available outside observeEvent()
       combine <- merge(Daily1,Daily2,by='Date')}
     if(length(gageList[[1]])>2){
       Daily3 <- readNWISdv(trimws(gageList[[1]][3],'b'),"00060","",Sys.Date())%>%
         filter(X_00060_00003_cd != 'P')%>%select(Date,X_00060_00003)
       names(Daily3)[2] <- paste(gageList[[1]][3],"Mean Daily Flow (cfs)",sep=" ")
+      values$gage3 <- Daily3 # make it available outside observeEvent()
       combine <- merge(combine,Daily3,by='Date')}
     if(length(gageList[[1]])>3){
       Daily4 <- readNWISdv(trimws(gageList[[1]][4],'b'),"00060","",Sys.Date())%>%
         filter(X_00060_00003_cd != 'P')%>%select(Date,X_00060_00003)
       names(Daily4)[2] <- paste(gageList[[1]][4],"Mean Daily Flow (cfs)",sep=" ")
+      values$gage4 <- Daily4 # make it available outside observeEvent()
       combine <- merge(combine,Daily4,by='Date')}
     values$df_data <- combine # make it available outside observeEvent()
+    })
     
-  })
-    
-    
+    ## Display combined gage data ##
     output$gageData <- renderDataTable({
       if(is.null(values$df_data))
         return(NULL)
       values$df_data$Date <- as.Date(values$df_data$Date)
-      datatable(values$df_data,rownames = F,extensions = 'Buttons', escape=F,
+      if(is.null(inputFile())){
+        datatable(values$df_data,rownames = F,extensions = 'Buttons', escape=F,
                   options=list(dom='Btlp',
                                lengthMenu= list(c(10,25,-1),c('10','25','All')),
                                buttons=list('copy',
                                             list(extend='csv',filename=paste('FlowComparison_',paste(input$gagesToSelect, collapse = "_"),Sys.Date(),sep='')),
-                                            list(extend='excel',filename=paste('FlowComparison_',paste(input$gagesToSelect, collapse = "_"),Sys.Date(),sep='')))))})
+                                            list(extend='excel',filename=paste('FlowComparison_',paste(input$gagesToSelect, collapse = "_"),Sys.Date(),sep='')))))
+      }else{
+        dat <- inputFile()
+        dat$Date <- as.Date(as.character(dat$Date))
+        combine2 <- merge(dat,values$df_data,by="Date")
+        datatable(combine2,rownames = F,extensions = 'Buttons', escape=F,
+                  options=list(dom='Btlp',
+                               lengthMenu= list(c(10,25,-1),c('10','25','All')),
+                               buttons=list('copy',
+                                            list(extend='csv',filename=paste('UserSiteFlowComparison_',paste(input$gagesToSelect, collapse = "_"),Sys.Date(),sep='')),
+                                            list(extend='excel',filename=paste('UserSiteFlowComparison_',paste(input$gagesToSelect, collapse = "_"),Sys.Date(),sep='')))))
+      }
+      })
     
   
+    ## Download template.csv ##
+    output$downloadTemplate <- downloadHandler(filename = function(){'template.csv'},
+                                               content=function(file){write.csv(template,file,row.names = F)})
+    
+    ## Upload user flow data ##
+    inputFile <- reactive({inFile <- input$userFlowData
+    if(is.null(inFile))
+      return(NULL)
+    read.csv(inFile$datapath)})
   
-  
+    output$corrResult <- renderTable({
+      if(is.null(inputFile()))
+        return(NULL)
+      
+    })
   
   #-------------------------------------------------------------------------------------------
   ## Existing Gage Correction Section
