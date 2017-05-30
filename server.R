@@ -20,6 +20,8 @@ shinyServer(function(input, output, session) {
   ## New Facility Section ##
   #-------------------------------------------------------------------------------------------------------
   
+  ### Stream Gage Statistics Tab ###
+  
   activeDot <- function(map,x,y){addCircleMarkers(map,x,y,radius=6,color='blue',fillColor = 'yellow',
                                                   fillOpacity = 1,opacity=1,weight = 2,stroke=T,layerId = 'Selected')}
   
@@ -41,11 +43,8 @@ shinyServer(function(input, output, session) {
         addCircleMarkers(data=gageInfo,radius=6,color=~'blue',stroke=F,
                          fillOpacity=0.5,group='gages',layerId=~GageNo,
                          popup=popupTable(gageInfo, zcol = c("GageNo","StationName","DrainArea",
-                                                             "HUC8","WebAddress")))
-      
-    }
-    
-  })
+                                                             "HUC8","WebAddress")))}
+    })
   
   ## Move map view to adjust with marker click ##
   observeEvent(input$GageMap_marker_click,{
@@ -111,7 +110,7 @@ shinyServer(function(input, output, session) {
   })
   
   ## Make a reactive element to save dataframe result from the gage selection process ##
-  values <- reactiveValues(gage_data=NULL)#,gage1=NULL,gage2=NULL,gage3=NULL,gage4=NULL)
+  values <- reactiveValues(gage_data=NULL,gage1=NULL,gage2=NULL,gage3=NULL,gage4=NULL)
   
   ## Go out and get gage data on user click ##
   
@@ -124,26 +123,26 @@ shinyServer(function(input, output, session) {
     names(Daily1)[2] <- paste(gageList[[1]][1],"Mean Daily Flow (cfs)",sep=" ")
     combine <- Daily1
     print(head(combine))
-    #values$gage1 <- Daily1 # make it available outside observeEvent()
+    values$gage1 <- Daily1 # make it available outside observeEvent()
     if(length(gageList[[1]])>1){
       Daily2 <- readNWISdv(trimws(gageList[[1]][2],'b'),"00060","",Sys.Date())%>%
         filter(X_00060_00003_cd != 'P')%>%select(Date,X_00060_00003)
       names(Daily2)[2] <- paste(gageList[[1]][2],"Mean Daily Flow (cfs)",sep=" ")
-      #values$gage2 <- Daily2 # make it available outside observeEvent()
+      values$gage2 <- Daily2 # make it available outside observeEvent()
       combine <- merge(Daily1,Daily2,by='Date')
       print(head(combine))}
     if(length(gageList[[1]])>2){
       Daily3 <- readNWISdv(trimws(gageList[[1]][3],'b'),"00060","",Sys.Date())%>%
         filter(X_00060_00003_cd != 'P')%>%select(Date,X_00060_00003)
       names(Daily3)[2] <- paste(gageList[[1]][3],"Mean Daily Flow (cfs)",sep=" ")
-      #values$gage3 <- Daily3 # make it available outside observeEvent()
+      values$gage3 <- Daily3 # make it available outside observeEvent()
       combine <- merge(combine,Daily3,by='Date')
       print(head(combine))}
     if(length(gageList[[1]])>3){
       Daily4 <- readNWISdv(trimws(gageList[[1]][4],'b'),"00060","",Sys.Date())%>%
         filter(X_00060_00003_cd != 'P')%>%select(Date,X_00060_00003)
       names(Daily4)[2] <- paste(gageList[[1]][4],"Mean Daily Flow (cfs)",sep=" ")
-      #values$gage4 <- Daily4 # make it available outside observeEvent()
+      values$gage4 <- Daily4 # make it available outside observeEvent()
       combine <- merge(combine,Daily4,by='Date')
       print(head(combine))}
     values$gage_data <- combine # make it available outside observeEvent()
@@ -160,6 +159,8 @@ shinyServer(function(input, output, session) {
                            buttons=list('copy',
                                         list(extend='csv',filename=paste('FlowComparison_',paste(input$gagesToSelect, collapse = "_"),Sys.Date(),sep='')),
                                         list(extend='excel',filename=paste('FlowComparison_',paste(input$gagesToSelect, collapse = "_"),Sys.Date(),sep='')))))})
+  
+  ### Correlation Analysis Tab ###
   
   ## Download template.csv ##
   output$downloadTemplate <- downloadHandler(filename = function(){'template.csv'},
@@ -190,17 +191,65 @@ shinyServer(function(input, output, session) {
                                           list(extend='csv',filename=paste('FlowComparison_',paste(input$gagesToSelect, collapse = "_"),Sys.Date(),sep='')),
                                           list(extend='excel',filename=paste('FlowComparison_',paste(input$gagesToSelect, collapse = "_"),Sys.Date(),sep='')))))})
     
-      
-      
-      
-      
+   #output$gageDataPreview1 <- renderTable({head(values$gage1)})   
+   #output$gageDataPreview2 <- renderTable({head(values$gage2)}) 
+   #output$gageDataPreview3 <- renderTable({head(values$gage3)}) 
+   #output$gageDataPreview4 <- renderTable({head(values$gage4)}) 
+   
+   ## Calculate correlations ##
+   corr <- reactive({
+     if(is.null(inputFile()))
+       return(NULL)
+     dat <- inputFile()
+     dat$Date <- as.Date(as.character(dat$Date))
+     
+     if(length(gageDataCombined())>0){
+       combine1 <- merge(dat,values$gage1,by="Date")
+       corresult <- data.frame(Gage=strsplit(names(values$gage1)[2]," ")[[1]][1],
+                              Correlation=cor(combine1[,2],combine1[,3]),
+                               n=nrow(combine1))}
+     if(length(gageDataCombined())>1){
+       combine2 <- merge(dat,values$gage2,by="Date")
+       corresult <- rbind(corresult,data.frame(Gage=strsplit(names(values$gage2)[2]," ")[[1]][2],
+                               Correlation=cor(combine2[,2],combine2[,3]),
+                               n=nrow(combine2)))}
+     if(length(gageDataCombined())>2){
+       combine3 <- merge(dat,values$gage3,by="Date")
+       corresult <- rbind(corresult,data.frame(Gage=strsplit(names(values$gage3)[2]," ")[[1]][2],
+                                               Correlation=cor(combine3[,2],combine3[,3]),
+                                               n=nrow(combine3)))}
+     if(length(gageDataCombined())>3){
+       combine4 <- merge(dat,values$gage4,by="Date")
+       corresult <- rbind(corresult,data.frame(Gage=strsplit(names(values$gage4)[2]," ")[[1]][2],
+                                               Correlation=cor(combine4[,2],combine4[,3]),
+                                               n=nrow(combine4)))}
+     return(corresult)
+   })
   
-  
-  
-  output$corrResult <- renderTable({
+   
+  ## Output Correlation data ##
+  output$corrResult <- DT::renderDataTable({
     if(is.null(inputFile()))
-      return(NULL)})
+      return(NULL)
+   datatable(corr(),rownames = F,extensions = 'Buttons', escape=F,
+             options=list(dom='Bt',
+                          buttons=list('copy',
+                                       list(extend='csv',filename=paste('CorrelationAnalysis_',paste(input$gagesToSelect, collapse = "_"),Sys.Date(),sep='')),
+                                       list(extend='excel',filename=paste('CorrelationAnalysis_',paste(input$gagesToSelect, collapse = "_"),Sys.Date(),sep='')))))%>%
+     formatRound(columns=c('Correlation'),digits=3)
+   })
   
+  
+  ## Select Gage from Correlation data to complete flow regression analysis ##
+  outputOptions(output,'gageData',suspendWhenHidden=FALSE)
+  
+  output$selectGageFromCorrelationData <- renderUI({
+    selectInput('selectGageFromCorrelation',strong("Select the gage you wish to use for subsequent flow regression analysis."),
+                                 choices=c(' ',extraStats()$SITEID))})
+  
+  ### Flow Regression Analysis ###
+  
+  #output$testthis <- renderPrint({names(values$gage3)}) 
   
   #-------------------------------------------------------------------------------------------
   ## Existing Gage Correction Section

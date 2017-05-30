@@ -44,7 +44,7 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                                    analysis. Once you have made your selection, press the 'Get Gage Data' button. The app will pull mean daily discharge
                                                                    data from each of the selected gages. Proceed to the 'Correlation Analysis' tab to review data and compare 
                                                                    gage data to a target stream."),strong("Note:"),p("The records are merged by date among all the selected gages
-                                                                                                                     so only common dates are returned.")),
+                                                                                                                     so only common dates are returned in this table.")),
                                                             wellPanel(uiOutput('gageSelection')),
                                                             helpText('The data displayed below is limited to the the dates common to ALL selected gages.'),
                                                             DT::dataTableOutput('gageDataPreview')),
@@ -56,16 +56,27 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                                                  dataset (as .csv), the app will automatically merge it with the gage table below and 
                                                                                  output correlation coefficients among the target stream and all other selected streams. 
                                                                                  Make sure you follow the template. Click the 'Download Template' button to ensure your file
-                                                                                 is in the correct format prior to uploading it to the app.")),
-                                                                        column(4,
+                                                                                 is in the correct format prior to uploading it to the app."),
                                                                                downloadButton('downloadTemplate',"Download template.csv"),
-                                                                               fileInput('userFlowData',"Upload single site (flat file)",accept = '.csv',width='100%'))),
-                                                                      DT::dataTableOutput('corrResult')),
+                                                                               fileInput('userFlowData',"Upload single site (flat file)",accept = '.csv',width='50%')
+                                                                               ),
+                                                                        column(4,DT::dataTableOutput('corrResult'),
+                                                                               br(),
+                                                                               #verbatimTextOutput('testthis'),
+                                                                               uiOutput('selectGageFromCorrelationData'))
+                                                                               #downloadButton('downloadTemplate',"Download template.csv"),
+                                                                               #fileInput('userFlowData',"Upload single site (flat file)",accept = '.csv',width='100%'))),
+                                                                      #DT::dataTableOutput('corrResult')
+                                                                      )),
                                                             hr(),
                                                             helpText('Remember, the data displayed below is limited to the the dates common to ALL selected gages. Correlation
                                                                      results compare the uploaded dataset to the entire gage datasets.'),
-                                                            DT::dataTableOutput('gageData')),
-                                                   tabPanel("Flow Regression"))),
+                                                            DT::dataTableOutput('gageData'),
+                                                            fluidRow(column(4,tableOutput('gageDataPreview1')),
+                                                                     column(4,tableOutput('gageDataPreview2')),
+                                                                     column(4,tableOutput('gageDataPreview3')),
+                                                                     column(4,tableOutput('gageDataPreview4')))),
+                                                   tabPanel("Flow Regression Analysis"))),
                                         tabPanel("Existing Facility: Update Stream Gage Statistics",
                                                  h5(strong('Instructions')),
                                                  p('Use this tab to update stream gage statistics. First select the gage statistics you wish
