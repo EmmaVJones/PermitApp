@@ -2,7 +2,7 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                   tagList(
                     singleton(tags$head(tags$script(src='//cdn.datatables.net/fixedheader/2.1.2/js/dataTables.fixedHeader.min.js',type='text/javascript'))),
                     singleton(tags$head(tags$link(href='//cdn.datatables.net/fixedheader/2.1.2/css/dataTables.fixedHeader.css',rel='stylesheet',type='text/css')))
-                    ), 
+                  ), 
                   withMathJax(),
                   shinyjs::useShinyjs(),
                   navbarPage('VDEQ Permit Tool',
@@ -19,19 +19,19 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                                               column(11,
                                                                                      h5(strong('Instructions:')),
                                                                                      p('Review the map of current USGS gages for comparison to your watershed. You can zoom to a specific site or
-                                                          simply scroll with your mouse. Clicking on a gage will bring up additional attributes and a link to the NWIS
-                                                          site to review current flow data.'),
+                                                                                       simply scroll with your mouse. Clicking on a gage will bring up additional attributes and a link to the NWIS
+                                                                                       site to review current flow data.'),
                                                                                      p('Choose up to four gages to review compare to your watershed. Use the drop down box to select which gages you 
-                                                           want to review after you have identified them on the map. Gage numbers are listed both in the attribute table 
-                                                           as well as directly above the drop down menu.')),
+                                                                                       want to review after you have identified them on the map. Gage numbers are listed both in the attribute table 
+                                                                                       as well as directly above the drop down menu.')),
                                                                               
                                                                               column(4,fluidRow(
                                                                                 wellPanel(textOutput('gageText'),
                                                                                           helpText('Use the drop down to select up to four gages to review further. You can scroll
-                                                                             through the list or begin to type the gage number you want to keep to see a filtered
-                                                                             list of gages based on your input.'),
+                                                                                                   through the list or begin to type the gage number you want to keep to see a filtered
+                                                                                                   list of gages based on your input.'),
                                                                                           selectizeInput('gageList',h5(strong('Gages to Review')),choices=gageInfo@data$GageNo,multiple=T))
-                                                                              )),
+                                                                                )),
                                                                               column(6,
                                                                                      tableOutput('gageInfoTable')
                                                                               )))),
@@ -41,11 +41,13 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                             br(),hr(),br(),
                                                             h5(strong("Instructions:")),
                                                             span(p("Based on the results above, please select up to four stream gages, using the checkboxes below, to utilize in a correlation 
-                                                              analysis. Once you have made your selection, press the 'Get Gage Data' button. The app will pull mean daily discharge
-                                                              data from each of the selected gages. Proceed to the 'Correlation Analysis' tab to review data and compare 
-                                                              gage data to a target stream."),strong("Note:"),p("The records are merged by date among all the selected gages
-                                                                                                  so only common dates are returned.")),
-                                                            wellPanel(uiOutput('gageSelection'))),
+                                                                   analysis. Once you have made your selection, press the 'Get Gage Data' button. The app will pull mean daily discharge
+                                                                   data from each of the selected gages. Proceed to the 'Correlation Analysis' tab to review data and compare 
+                                                                   gage data to a target stream."),strong("Note:"),p("The records are merged by date among all the selected gages
+                                                                                                                     so only common dates are returned.")),
+                                                            wellPanel(uiOutput('gageSelection')),
+                                                            helpText('The data displayed below is limited to the the dates common to ALL selected gages.'),
+                                                            DT::dataTableOutput('gageDataPreview')),
                                                    tabPanel("Correlation Analysis",
                                                             wellPanel(h5(strong('Instructions')),
                                                                       fluidRow(
@@ -67,8 +69,8 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                         tabPanel("Existing Facility: Update Stream Gage Statistics",
                                                  h5(strong('Instructions')),
                                                  p('Use this tab to update stream gage statistics. First select the gage statistics you wish
-                                                    to update. Then, you can either accept the gage information or apply a correction to the 
-                                                    gage based on a previous flow frequency analysis.'),
+                                                   to update. Then, you can either accept the gage information or apply a correction to the 
+                                                   gage based on a previous flow frequency analysis.'),
                                                  fluidRow(
                                                    column(4,
                                                           selectizeInput('gageListupdatestats',h5(strong('Gage to update')),choices=gageInfo@data$GageNo,selected= NA, multiple=F),
@@ -78,18 +80,18 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                           actionButton('updateFlowStats',"Update flow statistics"))),
                                                  br(),  
                                                  column(6,
-                                                          DT::dataTableOutput('adjustedFlowStats'))
+                                                        DT::dataTableOutput('adjustedFlowStats'))
                                                  
                                                  
-                                        )),
-                                        
+                                                 )),
+                             
                              navbarMenu("Background Metals Analysis",
                                         tabPanel("Probablilistic Monitoring (Weighted) Data",
                                                  bootstrapPage(div(class="outer",
                                                                    tags$style(type ="text/css",".outer {position: fixed; top: 75px; left: 0; right: 0; bottom: 0; overflow-y: scroll; padding: 0}"),
                                                                    column(11,wellPanel(h4('This section uses data from the Freshwater and Estuarine Probabilistic Monitoring Programs, 
-                                                                             thus results from this page represent statistically valid weighted estimates of measurements 
-                                                                             statewide.'))),
+                                                                                          thus results from this page represent statistically valid weighted estimates of measurements 
+                                                                                          statewide.'))),
                                                                    leafletOutput("weightedMap"),#, width="75%", height="100%"),
                                                                    absolutePanel(top=150, left=60, draggable = F,bottom="auto",height=100,width=150,
                                                                                  selectInput('metalToPlot',label=strong('Choose a Metal'),
@@ -103,32 +105,32 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                                                                                                            "Northern Piedmont",
                                                                                                                                            "Piedmont","Southeastern Plains"),
                                                                                                                            `SuperBasin` = c("Clinch-Powell","Potomac-Shenandoah",
-                                                                                                                                          "Rappahannock-York","Tennessee"),
+                                                                                                                                            "Rappahannock-York","Tennessee"),
                                                                                                                            `Basin` = c("Big Sandy","Chowan","Holston","James",
                                                                                                                                        "New","Potomac","Rappahannock","Roanoke",
                                                                                                                                        "Shenandoah","York"),
                                                                                                                            `Order` = c( "First Order","Second Order","Third Order",
                                                                                                                                         "Fourth Order","Fifth Order"))))),
                                                                    #absolutePanel(top=150, left=225, draggable = F,bottom="auto",height=50,width=175,
-                                                                  #               textInput('targetlocationUnweighted',strong("Search by Location"),placeholder="Example: 37.5, -79.0")),
+                                                                   #               textInput('targetlocationUnweighted',strong("Search by Location"),placeholder="Example: 37.5, -79.0")),
                                                                    fluidRow(
                                                                      column(7,style='padding:0px 10px 0px 30px;',
-                                                                          h5(strong('Instructions:')),
-                                                                          p("Use this section to help analyze background metals data for inclusion in forthcoming faciliy permit. 
-                                                                            Use the drop down on the map to adjust the metal and subpopulation plotted on the map. You can click the markers 
-                                                                            to find out more information about each data point. Review the associated summary statistics table below and 
-                                                                            cdf curve to the right. You can specify multiple subpopulations that characterize your site in the table below to 
-                                                                            review different statistical summaries simultaneously and copy or download them for future use."),
-                                                                          fluidRow(column(6,
-                                                                                          helpText('When you have selected the populations you want to review below, click
-                                                                                                   the button to the right to see all (weighted) metal statistics in one table. You can
-                                                                                                   download a report of all (weighted) metals statistics from that dialogue box.')),
-                                                                            column(6,actionButton('reviewstats',"Review Statistics for all metals",class='btn-block')))
-                                                                          ),
-                                                                          column(5,
-                                                                                 h5(strong('CDF Curve')),
-                                                                                 plotOutput('weightedMetalsCDF', height="300px"))
-                                                                                 ),
+                                                                            h5(strong('Instructions:')),
+                                                                            p("Use this section to help analyze background metals data for inclusion in forthcoming faciliy permit. 
+                                                                              Use the drop down on the map to adjust the metal and subpopulation plotted on the map. You can click the markers 
+                                                                              to find out more information about each data point. Review the associated summary statistics table below and 
+                                                                              cdf curve to the right. You can specify multiple subpopulations that characterize your site in the table below to 
+                                                                              review different statistical summaries simultaneously and copy or download them for future use."),
+                                                                            fluidRow(column(6,
+                                                                                            helpText('When you have selected the populations you want to review below, click
+                                                                                                     the button to the right to see all (weighted) metal statistics in one table. You can
+                                                                                                     download a report of all (weighted) metals statistics from that dialogue box.')),
+                                                                                     column(6,actionButton('reviewstats',"Review Statistics for all metals",class='btn-block')))
+                                                                            ),
+                                                                     column(5,
+                                                                            h5(strong('CDF Curve')),
+                                                                            plotOutput('weightedMetalsCDF', height="300px"))
+                                                                            ),
                                                                    column(12,
                                                                           h5(strong("Statistical Summary")),
                                                                           fluidRow(column(3,selectInput('basin',"Choose a Basin",
@@ -146,8 +148,8 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                                                                         choices=c("-","First Order","Second Order",
                                                                                                                   "Third Order","Fourth Order","Fifth Order")))
                                                                           )),
-                                                                  DT::dataTableOutput('weightedMetalsTable'))
-                                                               )),
+                                                                   DT::dataTableOutput('weightedMetalsTable'))
+                                                                     )),
                                         tabPanel("Targeted Monitoring (Unweighted) Data",
                                                  bootstrapPage(div(class="outer",
                                                                    tags$style(type ="text/css",".outer {position: fixed; top: 75px; left: 0; right: 0; bottom: 0; overflow-y: scroll; padding: 0}"),
@@ -187,15 +189,15 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                                                      column(9,DT::dataTableOutput('huc8Table')))
                                                                           )
                                                                           
-                                                                   )))
+                                                                          )))
                                                                    )
-                                        ),
+                                                 ),
                              tabPanel('About',fluidRow(column(10,
                                                               h5("This tool was created to assist VDEQ  staff in the permit review process."),
                                                               p("Other stuff.")))),
                              
-                            tabPanel(HTML(" </a></li><li><a href=\'https://enviromapper.us/shiny/'>| Shiny Homepage |"))
-                            
-                  )
-                  )
-        )
+                             tabPanel(HTML(" </a></li><li><a href=\'https://enviromapper.us/shiny/'>| Shiny Homepage |"))
+                             
+                                                   )
+                                                            )
+                             )

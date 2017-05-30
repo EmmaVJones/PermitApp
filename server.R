@@ -34,7 +34,7 @@ shinyServer(function(input, output, session) {
                                                              "HUC8","WebAddress")))}
     else{
       target_pos = geocode(input$targetlocation)
-
+      
       leaflet()%>%addProviderTiles('Thunderforest.Landscape')%>%addMouseCoordinates()%>%#style='basic')%>%
         setView(lng=target_pos$lon,lat=target_pos$lat,zoom=10)%>%
         #addHomeButton(extent(gageInfo), "Virginia Gages")%>%
@@ -42,7 +42,7 @@ shinyServer(function(input, output, session) {
                          fillOpacity=0.5,group='gages',layerId=~GageNo,
                          popup=popupTable(gageInfo, zcol = c("GageNo","StationName","DrainArea",
                                                              "HUC8","WebAddress")))
-        
+      
     }
     
   })
@@ -60,7 +60,7 @@ shinyServer(function(input, output, session) {
         activeDot(click$lng,click$lat)
     }
   })
-    
+  
   
   ## Populate table on gage click ##
   ## Take click info from map ##
@@ -101,19 +101,20 @@ shinyServer(function(input, output, session) {
     if(is.null(extraStats()))
       NULL
     return(extraStats())
-    })
+  })
   
   output$gageSelection <- renderUI({
     fluidRow(column(8,
                     checkboxGroupInput('gagesToSelect',"Select all gages you wish to use for subsequent correlation analyses.",
-                                  choices=extraStats()$SITEID)),
+                                       choices=extraStats()$SITEID)),
              column(4,actionButton("getGageData","Get Gage Data")))
   })
   
   ## Make a reactive element to save dataframe result from the gage selection process ##
-  values <- reactiveValues(df_data=NULL,gage1=NULL,gage2=NULL,gage3=NULL,gage4=NULL)
+  values <- reactiveValues(gage_data=NULL)#,gage1=NULL,gage2=NULL,gage3=NULL,gage4=NULL)
   
   ## Go out and get gage data on user click ##
+  
   observeEvent(input$getGageData,{
     gages <- paste(input$gagesToSelect, collapse = ", ")
     gageList <- strsplit(gages,',')
@@ -122,69 +123,84 @@ shinyServer(function(input, output, session) {
       filter(X_00060_00003_cd != 'P')%>%select(Date,X_00060_00003)
     names(Daily1)[2] <- paste(gageList[[1]][1],"Mean Daily Flow (cfs)",sep=" ")
     combine <- Daily1
-    values$gage1 <- Daily1 # make it available outside observeEvent()
+    print(head(combine))
+    #values$gage1 <- Daily1 # make it available outside observeEvent()
     if(length(gageList[[1]])>1){
       Daily2 <- readNWISdv(trimws(gageList[[1]][2],'b'),"00060","",Sys.Date())%>%
         filter(X_00060_00003_cd != 'P')%>%select(Date,X_00060_00003)
       names(Daily2)[2] <- paste(gageList[[1]][2],"Mean Daily Flow (cfs)",sep=" ")
-      values$gage2 <- Daily2 # make it available outside observeEvent()
-      combine <- merge(Daily1,Daily2,by='Date')}
+      #values$gage2 <- Daily2 # make it available outside observeEvent()
+      combine <- merge(Daily1,Daily2,by='Date')
+      print(head(combine))}
     if(length(gageList[[1]])>2){
       Daily3 <- readNWISdv(trimws(gageList[[1]][3],'b'),"00060","",Sys.Date())%>%
         filter(X_00060_00003_cd != 'P')%>%select(Date,X_00060_00003)
       names(Daily3)[2] <- paste(gageList[[1]][3],"Mean Daily Flow (cfs)",sep=" ")
-      values$gage3 <- Daily3 # make it available outside observeEvent()
-      combine <- merge(combine,Daily3,by='Date')}
+      #values$gage3 <- Daily3 # make it available outside observeEvent()
+      combine <- merge(combine,Daily3,by='Date')
+      print(head(combine))}
     if(length(gageList[[1]])>3){
       Daily4 <- readNWISdv(trimws(gageList[[1]][4],'b'),"00060","",Sys.Date())%>%
         filter(X_00060_00003_cd != 'P')%>%select(Date,X_00060_00003)
       names(Daily4)[2] <- paste(gageList[[1]][4],"Mean Daily Flow (cfs)",sep=" ")
-      values$gage4 <- Daily4 # make it available outside observeEvent()
-      combine <- merge(combine,Daily4,by='Date')}
-    values$df_data <- combine # make it available outside observeEvent()
-    })
+      #values$gage4 <- Daily4 # make it available outside observeEvent()
+      combine <- merge(combine,Daily4,by='Date')
+      print(head(combine))}
+    values$gage_data <- combine # make it available outside observeEvent()
+    print('values$df_data should be available now')
     
-    ## Display combined gage data ##
-    output$gageData <- renderDataTable({
-      if(is.null(values$df_data))
-        return(NULL)
-      values$df_data$Date <- as.Date(values$df_data$Date)
-      if(is.null(inputFile())){
-        datatable(values$df_data,rownames = F,extensions = 'Buttons', escape=F,
-                  options=list(dom='Btlp',
-                               lengthMenu= list(c(10,25,-1),c('10','25','All')),
-                               buttons=list('copy',
-                                            list(extend='csv',filename=paste('FlowComparison_',paste(input$gagesToSelect, collapse = "_"),Sys.Date(),sep='')),
-                                            list(extend='excel',filename=paste('FlowComparison_',paste(input$gagesToSelect, collapse = "_"),Sys.Date(),sep='')))))
-      }else{
-        dat <- inputFile()
-        dat$Date <- as.Date(as.character(dat$Date))
-        combine2 <- merge(dat,values$df_data,by="Date")
-        datatable(combine2,rownames = F,extensions = 'Buttons', escape=F,
-                  options=list(dom='Btlp',
-                               lengthMenu= list(c(10,25,-1),c('10','25','All')),
-                               buttons=list('copy',
-                                            list(extend='csv',filename=paste('UserSiteFlowComparison_',paste(input$gagesToSelect, collapse = "_"),Sys.Date(),sep='')),
-                                            list(extend='excel',filename=paste('UserSiteFlowComparison_',paste(input$gagesToSelect, collapse = "_"),Sys.Date(),sep='')))))
-      }
-      })
-    
+  })
   
-    ## Download template.csv ##
-    output$downloadTemplate <- downloadHandler(filename = function(){'template.csv'},
-                                               content=function(file){write.csv(template,file,row.names = F)})
-    
-    ## Upload user flow data ##
-    inputFile <- reactive({inFile <- input$userFlowData
-    if(is.null(inFile))
+  ## Preview data pulled from USGS ##
+  output$gageDataPreview <- renderDataTable({
+    #values$gage_data$Date <- as.Date(combine$Date)
+    datatable(values$gage_data,rownames = F,extensions = 'Buttons', escape=F,
+              options=list(dom='Btlp',
+                           lengthMenu= list(c(10,25,-1),c('10','25','All')),
+                           buttons=list('copy',
+                                        list(extend='csv',filename=paste('FlowComparison_',paste(input$gagesToSelect, collapse = "_"),Sys.Date(),sep='')),
+                                        list(extend='excel',filename=paste('FlowComparison_',paste(input$gagesToSelect, collapse = "_"),Sys.Date(),sep='')))))})
+  
+  ## Download template.csv ##
+  output$downloadTemplate <- downloadHandler(filename = function(){'template.csv'},
+                                             content=function(file){write.csv(template,file,row.names = F)})
+  
+  ## Upload user flow data ##
+  inputFile <- reactive({inFile <- input$userFlowData
+  if(is.null(inFile))
+    return(NULL)
+  read.csv(inFile$datapath)})
+  
+  ## Combine gages pulled from USGS and user uploaded file ##
+  gageDataCombined <- reactive({
+    if(is.null(inputFile()))
       return(NULL)
-    read.csv(inFile$datapath)})
+    dat <- inputFile()
+    dat$Date <- as.Date(as.character(dat$Date))
+    combine2 <- merge(dat,values$gage_data,by="Date")
+    return(combine2)})
   
-    output$corrResult <- renderTable({
-      if(is.null(inputFile()))
-        return(NULL)
+  ## Display combined gage data ##
+  output$gageData <- renderDataTable({
+  #  values$df_data$Date <- as.Date(values$df_data$Date)
+    datatable(gageDataCombined(),rownames = F,extensions = 'Buttons', escape=F,
+                options=list(dom='Btlp',
+                             lengthMenu= list(c(10,25,-1),c('10','25','All')),
+                             buttons=list('copy',
+                                          list(extend='csv',filename=paste('FlowComparison_',paste(input$gagesToSelect, collapse = "_"),Sys.Date(),sep='')),
+                                          list(extend='excel',filename=paste('FlowComparison_',paste(input$gagesToSelect, collapse = "_"),Sys.Date(),sep='')))))})
+    
       
-    })
+      
+      
+      
+  
+  
+  
+  output$corrResult <- renderTable({
+    if(is.null(inputFile()))
+      return(NULL)})
+  
   
   #-------------------------------------------------------------------------------------------
   ## Existing Gage Correction Section
@@ -196,9 +212,9 @@ shinyServer(function(input, output, session) {
       column(8,
              fluidRow(#tags$head(tags$style(type="text/css","label.control-label, .text-control.single{ display: table-cell; text-align: center; vertical-align: middle; }  .form-group { display: table-row;}")),
                column(8,textInput('userFormula','y = ', placeholder = 'Example: 0.008')),column(2,p('x'))),
-               textInput('power',"Type power below",placeholder='Example: 1.0854')))#,
-      #column(4,plotOutput('formulaPlot')))
-             #withMathJax(textOutput('formula'))))
+             textInput('power',"Type power below",placeholder='Example: 1.0854')))#,
+    #column(4,plotOutput('formulaPlot')))
+    #withMathJax(textOutput('formula'))))
   })
   
   ## Grey out updateFlowStats button until userFormula and power are filled in if under 'Add Formula' radiobutton
@@ -217,11 +233,11 @@ shinyServer(function(input, output, session) {
       step1.1 <- as.data.frame(t(step1))
       names(step1.1) <- "Selected Gage"
       return(step1.1)
-      }else{
-        step1[2,] <- c(SITEID=NA,sapply(step1[,2:7],function(x) (as.numeric(input$userFormula)*(x^as.numeric(input$power)))))
-        rownames(step1) <- c("Selected Gage","User Correction")
-        step2 <- as.data.frame(t(step1))
-        return(step2)}
+    }else{
+      step1[2,] <- c(SITEID=NA,sapply(step1[,2:7],function(x) (as.numeric(input$userFormula)*(x^as.numeric(input$power)))))
+      rownames(step1) <- c("Selected Gage","User Correction")
+      step2 <- as.data.frame(t(step1))
+      return(step2)}
     
   })
   
@@ -248,16 +264,16 @@ shinyServer(function(input, output, session) {
   #    scale_x_log10()+scale_y_log10()+
   #    annotation_logticks()+
   #    annotate('text',x=10,y=1.5,label=ex, parse=T)
-      #annotate('text',x=2,y=3,label=expression(Value~is~sigma~R^{2}==0.6))
+  #annotate('text',x=2,y=3,label=expression(Value~is~sigma~R^{2}==0.6))
   #})
   
   #output$formula <- renderPrint({
   #  if(is.null(input$userFormula))
   #    return(NULL)
-    #withMathJax(('$$input$userFormula^2$$'))
-    #withMathJax($$\\alpha^2$$)
-    #expression(input$userFormula ^ input$exponent)
-    #tags$div(HTML(paste(input$userFormula,tags$sup(input$exponent),sep="")))
+  #withMathJax(('$$input$userFormula^2$$'))
+  #withMathJax($$\\alpha^2$$)
+  #expression(input$userFormula ^ input$exponent)
+  #tags$div(HTML(paste(input$userFormula,tags$sup(input$exponent),sep="")))
   #})
   
   
@@ -290,13 +306,13 @@ shinyServer(function(input, output, session) {
     if(input$subpopToPlot=="Virginia")
       return(filter(df,category=='Basin'))
     return(filter(df,Subpopulation==input$subpopToPlot))
-   })
+  })
   
   # Subset metals CDF data based on user metal for stats below #
   metalsCDF_DataSelectfortable <- reactive({
     if(input$metalToPlot=="No Metals")
       return(NULL)
-  filter(metalsCDF,Indicator==toupper(input$metalToPlot))})
+    filter(metalsCDF,Indicator==toupper(input$metalToPlot))})
   
   # Population report section
   popsummaryVA <- reactive({
@@ -358,8 +374,8 @@ shinyServer(function(input, output, session) {
                        group='selectedSites',layerId=~StationID_Trend,
                        popup=paste(sep= "<br/>",metalsSites_DataSelect()$StationID,
                                    paste(capwords(tolower(metalsSites_DataSelect()$metal)),":",
-                                   metalsSites_DataSelect()$metal_value,
-                                   unique(metalsCDF_DataSelect()$units),sep=" ")))%>%
+                                         metalsSites_DataSelect()$metal_value,
+                                         unique(metalsCDF_DataSelect()$units),sep=" ")))%>%
       addLegend("bottomright",pal=pal,values=~metalsCDF_DataSelect()$Value,
                 title=paste(input$metalToPlot),opacity=1)
   })
@@ -373,8 +389,8 @@ shinyServer(function(input, output, session) {
               extensions = 'Buttons', escape=F, rownames = F,
               options=list(dom='Bt',
                            buttons=list('copy',
-                           list(extend='csv',filename=paste('BackgroundWeightedMetals_',input$metalToPlot,Sys.Date(),sep='')),
-                           list(extend='excel',filename=paste('BackgroundWeightedMetals_',input$metalToPlot,Sys.Date(),sep='')))))})                         
+                                        list(extend='csv',filename=paste('BackgroundWeightedMetals_',input$metalToPlot,Sys.Date(),sep='')),
+                                        list(extend='excel',filename=paste('BackgroundWeightedMetals_',input$metalToPlot,Sys.Date(),sep='')))))})                         
   
   # All Stats Summary table #
   allstats <- reactive({
@@ -391,7 +407,7 @@ shinyServer(function(input, output, session) {
       hr(),
       tableOutput('allstatstable'),
       br(),
-     downloadButton('knit','Send to Report'),
+      downloadButton('knit','Send to Report'),
       easyClose = TRUE
     ))
   })
@@ -403,7 +419,7 @@ shinyServer(function(input, output, session) {
     return(df)})
   
   
-
+  
   # Subset data on user map click to highlight on CDF curve
   marker <- reactive({
     click <- input$weightedMap_marker_click
@@ -450,12 +466,12 @@ shinyServer(function(input, output, session) {
       rmarkdown::render(tempReport,output_file= file,
                         params=params, envir=new.env(parent=globalenv()))})
   ##------------------------------------------------------------------------------------------------------
-
+  
   #-------------------------------------------------------------------------------------------
   ## Background Metals UNweighted (all data) Section ##
   #-------------------------------------------------------------------------------------------
   activeDotUN <- function(map,x,y){addCircleMarkers(map,x,y,radius=6,color='black',fillColor = 'yellow',
-                                                  fillOpacity = 1,opacity=1,weight = 2,stroke=T,layerId = 'SelectedUN')}
+                                                    fillOpacity = 1,opacity=1,weight = 2,stroke=T,layerId = 'SelectedUN')}
   
   
   output$unweightedMap <- renderLeaflet({
@@ -467,8 +483,8 @@ shinyServer(function(input, output, session) {
                          color=~'black',stroke=F,fillOpacity=0.5,
                          group='selectedSites_UN',layerId=~StationID_Trend,
                          popup=popupTable(metalsSites1, zcol = c("StationID","Year","StationID_Trend","CALCIUM","MAGNESIUM","ARSENIC","BARIUM",         
-                                                                "BERYLLIUM","CADMIUM","CHROMIUM","COPPER","IRON","LEAD","MANGANESE","THALLIUM",
-                                                                "NICKEL","SILVER","ZINC","ANTIMONY","ALUMINUM","SELENIUM","HARDNESS","MERCURY")))
+                                                                 "BERYLLIUM","CADMIUM","CHROMIUM","COPPER","IRON","LEAD","MANGANESE","THALLIUM",
+                                                                 "NICKEL","SILVER","ZINC","ANTIMONY","ALUMINUM","SELENIUM","HARDNESS","MERCURY")))
     }else{
       target_pos = geocode(input$targetlocationUN)
       
@@ -478,8 +494,8 @@ shinyServer(function(input, output, session) {
                          color=~'black',stroke=F,fillOpacity=0.5,
                          group='selectedSites_UN',layerId=~StationID_Trend,
                          popup=popupTable(metalsSites1, zcol = c("StationID","Year","StationID_Trend","CALCIUM","MAGNESIUM","ARSENIC","BARIUM",         
-                                                                "BERYLLIUM","CADMIUM","CHROMIUM","COPPER","IRON","LEAD","MANGANESE","THALLIUM",
-                                                                "NICKEL","SILVER","ZINC","ANTIMONY","ALUMINUM","SELENIUM","HARDNESS","MERCURY")))
+                                                                 "BERYLLIUM","CADMIUM","CHROMIUM","COPPER","IRON","LEAD","MANGANESE","THALLIUM",
+                                                                 "NICKEL","SILVER","ZINC","ANTIMONY","ALUMINUM","SELENIUM","HARDNESS","MERCURY")))
     }
   })
   
@@ -546,7 +562,7 @@ shinyServer(function(input, output, session) {
                            sum(findInterval(lat,bbox(Superbasins)[2,]),findInterval(lng,bbox(Superbasins)[1,]))>1)
   })
   
-
+  
   basin <- eventReactive(input$runStats,{
     geogsub(input$facilityUN,Superbasins,input$metalToPlotUN)})
   output$basinTable <- DT::renderDataTable({
@@ -598,7 +614,7 @@ shinyServer(function(input, output, session) {
     eco2 <- filter(allstatsdataUN,Population %in% eco1)
     huc2 <- filter(allstatsdataUN,Population %in% huc1)
     return(rbind(basin2,eco2,huc2)%>%arrange(Metal))
-   })
+  })
   
   # Facility location for output report #
   facilityloc <- reactive({
@@ -657,4 +673,3 @@ shinyServer(function(input, output, session) {
   
   
 })
-
