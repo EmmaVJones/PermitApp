@@ -95,6 +95,12 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                             #         column(4,tableOutput('gageDataPreview4')))
                                                             ),
                                                    tabPanel("Flow Frequency Analysis",
+                                                            h4('Gage vs uploaded flow data regression'),
+                                                            wellPanel(p('This part will output graph of  previously selected gage and user uploaded data,
+                                                              displaying regression line and equation as well as regression statistics. Then,
+                                                              the equation will be applied to the gage flow statistics and output in a table in
+                                                              the lower right corner. There will also be a button to output summary report for 
+                                                              this portion of the app, detailing gage analysis results, all tables, and graphics.')),
                                                             plotOutput('flowRegressionPlot'),
                                                             fluidRow(
                                                               column(6,
