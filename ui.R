@@ -79,7 +79,7 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                                                ),
                                                                         column(4,DT::dataTableOutput('corrResult'),
                                                                                br(),br(),br(),br(),
-                                                                               verbatimTextOutput('testthis'),
+                                                                               #verbatimTextOutput('testthis'),
                                                                                uiOutput('selectGageFromCorrelationData'))
                                                                                #downloadButton('downloadTemplate',"Download template.csv"),
                                                                                #fileInput('userFlowData',"Upload single site (flat file)",accept = '.csv',width='100%'))),

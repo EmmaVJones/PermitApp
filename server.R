@@ -272,7 +272,11 @@ shinyServer(function(input, output, session) {
   
   ## Flow Data table ##
   output$flowData <- DT::renderDataTable({
-    datatable(finalGage())
+    datatable(finalGage(),rownames = F,extensions = 'Buttons', escape=F,
+              options=list(dom='Bt',
+                           buttons=list('copy',
+                                        list(extend='csv',filename=paste('FlowFrequencyComparison_',paste(input$selectGageFromCorrelation, collapse = "_"),Sys.Date(),sep='')),
+                                        list(extend='excel',filename=paste('FlowFrequencyComparison_',paste(input$selectGageFromCorrelation, collapse = "_"),Sys.Date(),sep='')))))
   })
   
   output$testthis <- renderPrint({paste("1",strsplit(names(values$gage1)[2]," ")[[1]][1],
