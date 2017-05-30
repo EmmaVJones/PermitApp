@@ -139,6 +139,7 @@ geogsub <- function(latlong,watershedlevel,metalOfInterest){
   
   }
 
+
 #geogsub('36.8, -78.965',huc8,'magnesium')
 #geogsub('37.265, -78.56',Ecoregions,'iron')
 #geogsub('37.265, -78.56',Superbasins,'iron')

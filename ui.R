@@ -7,6 +7,23 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                   shinyjs::useShinyjs(),
                   navbarPage('VDEQ Permit Tool',
                              navbarMenu("Flow Analysis",
+                                        tabPanel("Existing Facility: Update Stream Gage Statistics",
+                                                 h5(strong('Instructions')),
+                                                 p('Use this tab to update stream gage statistics. First select the gage statistics you wish
+                                                   to update. Then, you can either accept the gage information or apply a correction to the 
+                                                   gage based on a previous flow frequency analysis.'),
+                                                 fluidRow(
+                                                   column(4,
+ #change me when update final flow metrics
+ selectizeInput('gageListupdatestats',h5(strong('Gage to update')),choices=gagestats$SITEID,selected= NA, multiple=F),
+                #,choices=gageInfo@data$GageNo,selected= NA, multiple=F),
+                                                          radioButtons("addFormula","Gage Statistics",c("No Correction","Add Formula"),selected = "No Correction",inline=T),
+                                                          conditionalPanel("input.addFormula == 'Add Formula'",
+                                                                           uiOutput('formulas')),
+                                                          actionButton('updateFlowStats',"Update flow statistics"))),
+                                                 br(),  
+                                                 column(6,
+                                                        DT::dataTableOutput('adjustedFlowStats'))),
                                         tabPanel("New Facility",
                                                  tabsetPanel(
                                                    tabPanel("Stream Gage Selection",
@@ -61,8 +78,8 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                                                fileInput('userFlowData',"Upload single site (flat file)",accept = '.csv',width='50%')
                                                                                ),
                                                                         column(4,DT::dataTableOutput('corrResult'),
-                                                                               br(),
-                                                                               #verbatimTextOutput('testthis'),
+                                                                               br(),br(),br(),br(),
+                                                                               verbatimTextOutput('testthis'),
                                                                                uiOutput('selectGageFromCorrelationData'))
                                                                                #downloadButton('downloadTemplate',"Download template.csv"),
                                                                                #fileInput('userFlowData',"Upload single site (flat file)",accept = '.csv',width='100%'))),
@@ -71,30 +88,22 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                             hr(),
                                                             helpText('Remember, the data displayed below is limited to the the dates common to ALL selected gages. Correlation
                                                                      results compare the uploaded dataset to the entire gage datasets.'),
-                                                            DT::dataTableOutput('gageData'),
-                                                            fluidRow(column(4,tableOutput('gageDataPreview1')),
-                                                                     column(4,tableOutput('gageDataPreview2')),
-                                                                     column(4,tableOutput('gageDataPreview3')),
-                                                                     column(4,tableOutput('gageDataPreview4')))),
-                                                   tabPanel("Flow Regression Analysis"))),
-                                        tabPanel("Existing Facility: Update Stream Gage Statistics",
-                                                 h5(strong('Instructions')),
-                                                 p('Use this tab to update stream gage statistics. First select the gage statistics you wish
-                                                   to update. Then, you can either accept the gage information or apply a correction to the 
-                                                   gage based on a previous flow frequency analysis.'),
-                                                 fluidRow(
-                                                   column(4,
-                                                          selectizeInput('gageListupdatestats',h5(strong('Gage to update')),choices=gageInfo@data$GageNo,selected= NA, multiple=F),
-                                                          radioButtons("addFormula","Gage Statistics",c("No Correction","Add Formula"),selected = "No Correction",inline=T),
-                                                          conditionalPanel("input.addFormula == 'Add Formula'",
-                                                                           uiOutput('formulas')),
-                                                          actionButton('updateFlowStats',"Update flow statistics"))),
-                                                 br(),  
-                                                 column(6,
-                                                        DT::dataTableOutput('adjustedFlowStats'))
-                                                 
-                                                 
-                                                 )),
+                                                            DT::dataTableOutput('gageData')
+                                                            #fluidRow(column(4,tableOutput('gageDataPreview1')),
+                                                            #         column(4,tableOutput('gageDataPreview2')),
+                                                            #         column(4,tableOutput('gageDataPreview3')),
+                                                            #         column(4,tableOutput('gageDataPreview4')))
+                                                            ),
+                                                   tabPanel("Flow Frequency Analysis",
+                                                            plotOutput('flowRegressionPlot'),
+                                                            fluidRow(
+                                                              column(6,
+                                                                     h4("Flow Data"),
+                                                                     DT::dataTableOutput('flowData')),
+                                                              column(6,
+                                                                     h4('Flow Frequencies'),
+                                                                     DT::dataTableOutput('flowFrequencies')))
+                                                            )))),
                              
                              navbarMenu("Background Metals Analysis",
                                         tabPanel("Probablilistic Monitoring (Weighted) Data",

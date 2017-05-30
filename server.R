@@ -7,12 +7,12 @@ source('global.R')
 
 
 # Upload GIS data here to avoid uploading it twice (if it were in the global.R file)
-#Ecoregions <- readOGR('data','vaECOREGIONlevel3__proj84')
-#Ecoregions@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
-#Superbasins <- readOGR('data','VAsuperbasins_proj84')
-#Superbasins@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
-#huc8 <- readOGR('data','HUC8_wgs84')
-#huc8@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+Ecoregions <- readOGR('data','vaECOREGIONlevel3__proj84')
+Ecoregions@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+Superbasins <- readOGR('data','VAsuperbasins_proj84')
+Superbasins@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+huc8 <- readOGR('data','HUC8_wgs84')
+huc8@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
 
 
 shinyServer(function(input, output, session) {
@@ -44,7 +44,7 @@ shinyServer(function(input, output, session) {
                          fillOpacity=0.5,group='gages',layerId=~GageNo,
                          popup=popupTable(gageInfo, zcol = c("GageNo","StationName","DrainArea",
                                                              "HUC8","WebAddress")))}
-    })
+  })
   
   ## Move map view to adjust with marker click ##
   observeEvent(input$GageMap_marker_click,{
@@ -183,61 +183,61 @@ shinyServer(function(input, output, session) {
   
   ## Display combined gage data ##
   output$gageData <- renderDataTable({
-  #  values$df_data$Date <- as.Date(values$df_data$Date)
+    #  values$df_data$Date <- as.Date(values$df_data$Date)
     datatable(gageDataCombined(),rownames = F,extensions = 'Buttons', escape=F,
-                options=list(dom='Btlp',
-                             lengthMenu= list(c(10,25,-1),c('10','25','All')),
-                             buttons=list('copy',
-                                          list(extend='csv',filename=paste('FlowComparison_',paste(input$gagesToSelect, collapse = "_"),Sys.Date(),sep='')),
-                                          list(extend='excel',filename=paste('FlowComparison_',paste(input$gagesToSelect, collapse = "_"),Sys.Date(),sep='')))))})
-    
-   #output$gageDataPreview1 <- renderTable({head(values$gage1)})   
-   #output$gageDataPreview2 <- renderTable({head(values$gage2)}) 
-   #output$gageDataPreview3 <- renderTable({head(values$gage3)}) 
-   #output$gageDataPreview4 <- renderTable({head(values$gage4)}) 
-   
-   ## Calculate correlations ##
-   corr <- reactive({
-     if(is.null(inputFile()))
-       return(NULL)
-     dat <- inputFile()
-     dat$Date <- as.Date(as.character(dat$Date))
-     
-     if(length(gageDataCombined())>0){
-       combine1 <- merge(dat,values$gage1,by="Date")
-       corresult <- data.frame(Gage=strsplit(names(values$gage1)[2]," ")[[1]][1],
-                              Correlation=cor(combine1[,2],combine1[,3]),
-                               n=nrow(combine1))}
-     if(length(gageDataCombined())>1){
-       combine2 <- merge(dat,values$gage2,by="Date")
-       corresult <- rbind(corresult,data.frame(Gage=strsplit(names(values$gage2)[2]," ")[[1]][2],
-                               Correlation=cor(combine2[,2],combine2[,3]),
-                               n=nrow(combine2)))}
-     if(length(gageDataCombined())>2){
-       combine3 <- merge(dat,values$gage3,by="Date")
-       corresult <- rbind(corresult,data.frame(Gage=strsplit(names(values$gage3)[2]," ")[[1]][2],
-                                               Correlation=cor(combine3[,2],combine3[,3]),
-                                               n=nrow(combine3)))}
-     if(length(gageDataCombined())>3){
-       combine4 <- merge(dat,values$gage4,by="Date")
-       corresult <- rbind(corresult,data.frame(Gage=strsplit(names(values$gage4)[2]," ")[[1]][2],
-                                               Correlation=cor(combine4[,2],combine4[,3]),
-                                               n=nrow(combine4)))}
-     return(corresult)
-   })
+              options=list(dom='Btlp',
+                           lengthMenu= list(c(10,25,-1),c('10','25','All')),
+                           buttons=list('copy',
+                                        list(extend='csv',filename=paste('FlowComparison_',paste(input$gagesToSelect, collapse = "_"),Sys.Date(),sep='')),
+                                        list(extend='excel',filename=paste('FlowComparison_',paste(input$gagesToSelect, collapse = "_"),Sys.Date(),sep='')))))})
   
-   
+  #output$gageDataPreview1 <- renderTable({head(values$gage1)})   
+  #output$gageDataPreview2 <- renderTable({head(values$gage2)}) 
+  #output$gageDataPreview3 <- renderTable({head(values$gage3)}) 
+  #output$gageDataPreview4 <- renderTable({head(values$gage4)}) 
+  
+  ## Calculate correlations ##
+  corr <- reactive({
+    if(is.null(inputFile()))
+      return(NULL)
+    dat <- inputFile()
+    dat$Date <- as.Date(as.character(dat$Date))
+    
+    if(length(gageDataCombined())>0){
+      combine1 <- merge(dat,values$gage1,by.x="Date",by.y="Date")
+      corresult <- data.frame(Gage=strsplit(names(values$gage1)[2]," ")[[1]][1],
+                              Correlation=cor(combine1[,2],combine1[,3]),
+                              n=nrow(combine1))}
+    if(length(gageDataCombined())>1){
+      combine2 <- merge(dat,values$gage2,by.x="Date",by.y="Date")
+      corresult <- rbind(corresult,data.frame(Gage=strsplit(names(values$gage2)[2]," ")[[1]][2],
+                                              Correlation=cor(combine2[,2],combine2[,3]),
+                                              n=nrow(combine2)))}
+    if(length(gageDataCombined())>2){
+      combine3 <- merge(dat,values$gage3,by.x="Date",by.y="Date")
+      corresult <- rbind(corresult,data.frame(Gage=strsplit(names(values$gage3)[2]," ")[[1]][2],
+                                              Correlation=cor(combine3[,2],combine3[,3]),
+                                              n=nrow(combine3)))}
+    if(length(gageDataCombined())>3){
+      combine4 <- merge(dat,values$gage4,by.x="Date",by.y="Date")
+      corresult <- rbind(corresult,data.frame(Gage=strsplit(names(values$gage4)[2]," ")[[1]][2],
+                                              Correlation=cor(combine4[,2],combine4[,3]),
+                                              n=nrow(combine4)))}
+    return(corresult)
+  })
+  
+  
   ## Output Correlation data ##
   output$corrResult <- DT::renderDataTable({
     if(is.null(inputFile()))
       return(NULL)
-   datatable(corr(),rownames = F,extensions = 'Buttons', escape=F,
-             options=list(dom='Bt',
-                          buttons=list('copy',
-                                       list(extend='csv',filename=paste('CorrelationAnalysis_',paste(input$gagesToSelect, collapse = "_"),Sys.Date(),sep='')),
-                                       list(extend='excel',filename=paste('CorrelationAnalysis_',paste(input$gagesToSelect, collapse = "_"),Sys.Date(),sep='')))))%>%
-     formatRound(columns=c('Correlation'),digits=3)
-   })
+    datatable(corr(),rownames = F,extensions = 'Buttons', escape=F,
+              options=list(dom='Bt',
+                           buttons=list('copy',
+                                        list(extend='csv',filename=paste('CorrelationAnalysis_',paste(input$gagesToSelect, collapse = "_"),Sys.Date(),sep='')),
+                                        list(extend='excel',filename=paste('CorrelationAnalysis_',paste(input$gagesToSelect, collapse = "_"),Sys.Date(),sep='')))))%>%
+      formatRound(columns=c('Correlation'),digits=3)
+  })
   
   
   ## Select Gage from Correlation data to complete flow regression analysis ##
@@ -245,11 +245,40 @@ shinyServer(function(input, output, session) {
   
   output$selectGageFromCorrelationData <- renderUI({
     selectInput('selectGageFromCorrelation',strong("Select the gage you wish to use for subsequent flow regression analysis."),
-                                 choices=c(' ',extraStats()$SITEID))})
+                choices=c(' ',extraStats()$SITEID))})
   
-  ### Flow Regression Analysis ###
+  ### Flow Frequency Analysis ###
   
-  #output$testthis <- renderPrint({names(values$gage3)}) 
+  ## Selected gage ##
+  finalGage <- reactive({
+    if(is.null(input$selectGageFromCorrelation) | input$selectGageFromCorrelation == " ")
+      return(NULL)
+    #match data to selected gage
+    if(input$selectGageFromCorrelation == strsplit(names(values$gage1)[2]," ")[[1]][1]){finalgage <- values$gage1}
+    if(input$selectGageFromCorrelation == strsplit(names(values$gage2)[2]," ")[[1]][2]){finalgage <- values$gage2}
+    if(input$selectGageFromCorrelation == strsplit(names(values$gage3)[2]," ")[[1]][2]){finalgage <- values$gage3}
+    if(input$selectGageFromCorrelation == strsplit(names(values$gage4)[2]," ")[[1]][2]){finalgage <- values$gage4}
+    
+    dat <- inputFile()
+    dat$Date <- as.Date(as.character(dat$Date))
+    finalcombine <- merge(dat,finalgage,by="Date")
+    return(finalcombine)
+  })
+  
+  ## Flow comparison plot ##
+  output$flowRegressionPlot <- renderPlot({
+    
+  })
+  
+  ## Flow Data table ##
+  output$flowData <- DT::renderDataTable({
+    datatable(finalGage())
+  })
+  
+  output$testthis <- renderPrint({paste("1",strsplit(names(values$gage1)[2]," ")[[1]][1],
+                                        "2",strsplit(names(values$gage2)[2]," ")[[1]][2],
+                                        "3",strsplit(names(values$gage3)[2]," ")[[1]][2],
+                                        "4",strsplit(names(values$gage4)[2]," ")[[1]][2],sep=" ")}) 
   
   #-------------------------------------------------------------------------------------------
   ## Existing Gage Correction Section
@@ -298,7 +327,6 @@ shinyServer(function(input, output, session) {
                            buttons=list('copy',
                                         list(extend='csv',filename=paste('UpdatedFlowStatistics_',input$gageListupdatestats,Sys.Date(),sep='')),
                                         list(extend='excel',filename=paste('UpdatedFlowStatistics_',input$gageListupdatestats,Sys.Date(),sep='')))))
-    
   })
   
   
