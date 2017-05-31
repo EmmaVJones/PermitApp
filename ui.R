@@ -88,11 +88,11 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                             hr(),
                                                             helpText('Remember, the data displayed below is limited to the the dates common to ALL selected gages. Correlation
                                                                      results compare the uploaded dataset to the entire gage datasets.'),
-                                                            DT::dataTableOutput('gageData')
+                                                            DT::dataTableOutput('gageData')#,
                                                             #fluidRow(column(4,tableOutput('gageDataPreview1')),
                                                             #         column(4,tableOutput('gageDataPreview2')),
-                                                            #         column(4,tableOutput('gageDataPreview3')),
-                                                            #         column(4,tableOutput('gageDataPreview4')))
+                                                             #        column(4,tableOutput('gageDataPreview3')),
+                                                             #        column(4,tableOutput('gageDataPreview4')))
                                                             ),
                                                    tabPanel("Flow Frequency Analysis",
                                                             h4('Gage vs uploaded flow data regression'),
@@ -207,11 +207,11 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                                                             br(),br(),
                                                                                             actionButton('reviewstatsUN',"Review Statistics for all metals",class='btn-block'))),
                                                                             br(),br(),
-                                                                            fluidRow(column(3,h6(strong('Superbasin Statistics'))),
-                                                                                     column(9,DT::dataTableOutput('basinTable'))),
+                                                                            fluidRow(column(3,h6(strong('Basin Statistics'))),
+                                                                                     column(9,DT::dataTableOutput('basinTable'))),br(),br(),
                                                                             fluidRow(column(3,h6(strong('Ecoregion Statistics'))),
-                                                                                     column(9,DT::dataTableOutput('ecoTable'))),
-                                                                            fluidRow(column(3,h6(strong('Superbasin Statistics'))),
+                                                                                     column(9,DT::dataTableOutput('ecoTable'))),br(),br(),
+                                                                            fluidRow(column(3,h6(strong('HUC8 Statistics'))),
                                                                                      column(9,DT::dataTableOutput('huc8Table')))
                                                                           )
                                                                           
