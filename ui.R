@@ -79,7 +79,7 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                                                ),
                                                                         column(4,DT::dataTableOutput('corrResult'),
                                                                                br(),br(),br(),br(),
-                                                                               #verbatimTextOutput('testthis'),
+                                                                               verbatimTextOutput('testthis'),
                                                                                uiOutput('selectGageFromCorrelationData'))
                                                                                #downloadButton('downloadTemplate',"Download template.csv"),
                                                                                #fileInput('userFlowData',"Upload single site (flat file)",accept = '.csv',width='100%'))),
@@ -101,7 +101,7 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                               the equation will be applied to the gage flow statistics and output in a table in
                                                               the lower right corner. There will also be a button to output summary report for 
                                                               this portion of the app, detailing gage analysis results, all tables, and graphics.')),
-                                                            plotOutput('flowRegressionPlot'),
+                                                            column(8,plotOutput('flowRegressionPlot')),
                                                             fluidRow(
                                                               column(6,
                                                                      h4("Flow Data"),

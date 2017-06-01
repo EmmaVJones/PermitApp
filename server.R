@@ -7,12 +7,12 @@ source('global.R')
 
 
 # Upload GIS data here to avoid uploading it twice (if it were in the global.R file)
-#Ecoregions <- readOGR('data','vaECOREGIONlevel3__proj84')
-#Ecoregions@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
-#Superbasins <- readOGR('data','VAsuperbasins_proj84')
-#Superbasins@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
-#huc8 <- readOGR('data','HUC8_wgs84')
-#huc8@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+Ecoregions <- readOGR('data','vaECOREGIONlevel3__proj84')
+Ecoregions@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+Superbasins <- readOGR('data','VAsuperbasins_proj84')
+Superbasins@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+huc8 <- readOGR('data','HUC8_wgs84')
+huc8@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
 
 
 shinyServer(function(input, output, session) {
@@ -192,16 +192,27 @@ shinyServer(function(input, output, session) {
                                         list(extend='csv',filename=paste('FlowComparison_',paste(input$gagesToSelect, collapse = "_"),Sys.Date(),sep='')),
                                         list(extend='excel',filename=paste('FlowComparison_',paste(input$gagesToSelect, collapse = "_"),Sys.Date(),sep='')))))})
   
+  ## Save as reactive df to make app more stable ##
   gage1 <- reactive({values$gage1})
+    #gage1 <- values$gage1[,1:2]%>%mutate(date=as.character(Date))
+    #return(gage1)})
   gage2 <- reactive({values$gage2})
+    #gage2 <- values$gage2[,1:2]%>%mutate(date=as.character(Date))
+    #return(gage2)})
   gage3 <- reactive({values$gage3})
-  gage4 <- reactive({values$gage4})
+    #gage3 <- values$gage3[,1:2]%>%mutate(date=as.character(Date))
+  #return(gage3)})
+  gage4 <- reactive({values$gage4
+    #gage4 <- values$gage4[,1:2]%>%mutate(date=as.character(Date))
+    #return(gage4)
+  })
   
   #output$gageDataPreview1 <- renderTable({head(gage1())})   
-  #output$details <- renderPrint({str(gage1())})
+  #output$testthis <- renderPrint({attributes(gage1())})
   #output$gageDataPreview2 <- renderTable({head(gage1())}) 
   #output$gageDataPreview3 <- renderTable({head(values$gage3)}) 
   #output$gageDataPreview4 <- renderTable({head(values$gage4)}) 
+  
   
   
   
@@ -212,28 +223,30 @@ shinyServer(function(input, output, session) {
     dat <- inputFile()
     dat$Date <- as.Date(as.character(dat$Date))
     
-    if(length(gageDataCombined())>0){
-      combine1 <- merge(dat,gage1(),by.x="Date",by.y="Date")
-      corresult <- data.frame(Gage=strsplit(names(gage1())[2]," ")[[1]][1],
+    if(length(gageDataCombined())>2){
+      combine1 <- merge(dat,values$gage1,by.x="Date",by.y="Date")
+      corresult <- data.frame(Gage=strsplit(names(values$gage1)[2]," ")[[1]][1],
                               Correlation=cor(combine1[,2],combine1[,3]),
                               n=nrow(combine1))}
-    if(length(gageDataCombined())>1){
-      combine2 <- merge(dat,gage2(),by.x="Date",by.y="Date")
-      corresult <- rbind(corresult,data.frame(Gage=strsplit(names(gage2())[2]," ")[[1]][2],
+    if(length(gageDataCombined())>3){
+      combine2 <- merge(dat,values$gage2,by.x="Date",by.y="Date")
+      corresult <- rbind(corresult,data.frame(Gage=strsplit(names(values$gage2)[2]," ")[[1]][2],
                                               Correlation=cor(combine2[,2],combine2[,3]),
                                               n=nrow(combine2)))}
-    if(length(gageDataCombined())>2){
-      combine3 <- merge(dat,gage3(),by.x="Date",by.y="Date")
-      corresult <- rbind(corresult,data.frame(Gage=strsplit(names(gage3())[2]," ")[[1]][2],
+    if(length(gageDataCombined())>4){
+      combine3 <- merge(dat,values$gage3,by.x="Date",by.y="Date")
+      corresult <- rbind(corresult,data.frame(Gage=strsplit(names(values$gage3)[2]," ")[[1]][2],
                                               Correlation=cor(combine3[,2],combine3[,3]),
                                               n=nrow(combine3)))}
-    if(length(gageDataCombined())>3){
-      combine4 <- merge(dat,gage4(),by.x="Date",by.y="Date")
-      corresult <- rbind(corresult,data.frame(Gage=strsplit(names(gage4())[2]," ")[[1]][2],
+    if(length(gageDataCombined())>5){
+      combine4 <- merge(dat,values$gage4,by.x="Date",by.y="Date")
+      corresult <- rbind(corresult,data.frame(Gage=strsplit(names(values$gage4)[2]," ")[[1]][2],
                                               Correlation=cor(combine4[,2],combine4[,3]),
                                               n=nrow(combine4)))}
     return(corresult)
   })
+  
+  
   
   
   ## Output Correlation data ##
@@ -256,6 +269,7 @@ shinyServer(function(input, output, session) {
     selectInput('selectGageFromCorrelation',strong("Select the gage you wish to use for subsequent flow regression analysis."),
                 choices=c(' ',extraStats()$SITEID))})
   
+  
   ### Flow Frequency Analysis ###
   
   ## Selected gage ##
@@ -263,20 +277,38 @@ shinyServer(function(input, output, session) {
     if(is.null(input$selectGageFromCorrelation) | input$selectGageFromCorrelation == " ")
       return(NULL)
     #match data to selected gage
-    if(input$selectGageFromCorrelation == strsplit(names(gage1())[2]," ")[[1]][1]){finalgage <- gage1()}
-    if(input$selectGageFromCorrelation == strsplit(names(gage2())[2]," ")[[1]][2]){finalgage <- gage2()}
-    if(input$selectGageFromCorrelation == strsplit(names(gage3())[2]," ")[[1]][2]){finalgage <- gage3()}
-    if(input$selectGageFromCorrelation == strsplit(names(gage4())[2]," ")[[1]][2]){finalgage <- gage4()}
+    if(length(gageDataCombined())>2){
+      if(input$selectGageFromCorrelation == strsplit(names(gage1())[2]," ")[[1]][1]){finalgage <- gage1()}}
+    if(length(gageDataCombined())>3){
+      if(input$selectGageFromCorrelation == strsplit(names(gage2())[2]," ")[[1]][2]){finalgage <- gage2()}}
+    if(length(gageDataCombined())>4){
+      if(input$selectGageFromCorrelation == strsplit(names(gage3())[2]," ")[[1]][2]){finalgage <- gage3()}}
+    if(length(gageDataCombined())>5){
+      if(input$selectGageFromCorrelation == strsplit(names(gage4())[2]," ")[[1]][2]){finalgage <- gage4()}}
     
     dat <- inputFile()
     dat$Date <- as.Date(as.character(dat$Date))
-    finalcombine <- merge(dat,finalgage,by="Date")
+    finalcombine <- merge(dat,finalgage,by.x="Date",by.y="Date")
     return(finalcombine)
   })
   
   ## Flow comparison plot ##
   output$flowRegressionPlot <- renderPlot({
+    if(is.null(input$selectGageFromCorrelation) | input$selectGageFromCorrelation == " ")
+      return(NULL)
+    # make a new df and change column names to common variable so can call in ggplot regardless of names
+    dat <- finalGage()
+    names(dat)[c(2,3)] <- c('StreamName',"GageName")
+    print(str(dat))
     
+    ggplotRegression(lm(StreamName ~ GageName,data=dat))+
+      scale_x_log10(breaks=seq(0,100,10),minor_breaks=seq(0,100,10))+
+      scale_y_log10(breaks=seq(0,100,10),minor_breaks=seq(0,100,10))
+    
+    #ggplot(dat,aes(x=GageName,y=StreamName))+geom_point()+
+    #  stat_smooth(method = "lm", col = "red")+
+    #  scale_x_log10(breaks=seq(0,100,10),minor_breaks=seq(0,100,10))+
+    #  scale_y_log10(breaks=seq(0,100,10),minor_breaks=seq(0,100,10))
   })
   
   ## Flow Data table ##
@@ -288,10 +320,10 @@ shinyServer(function(input, output, session) {
                                         list(extend='excel',filename=paste('FlowFrequencyComparison_',paste(input$selectGageFromCorrelation, collapse = "_"),Sys.Date(),sep='')))))
   })
   
-  output$testthis <- renderPrint({paste("1",strsplit(names(gage1())[2]," ")[[1]][1],
-                                        "2",strsplit(names(gage2())[2]," ")[[1]][2],
-                                        "3",strsplit(names(gage3())[2]," ")[[1]][2],
-                                        "4",strsplit(names(gage4())[2]," ")[[1]][2],sep=" ")}) 
+  #output$testthis <- renderPrint({paste("1",strsplit(names(gage1())[2]," ")[[1]][1],
+  #                                      "2",strsplit(names(gage2())[2]," ")[[1]][2],
+  #                                      "3",strsplit(names(gage3())[2]," ")[[1]][2],
+   #                                     "4",strsplit(names(gage4())[2]," ")[[1]][2],sep=" ")}) 
   
   #-------------------------------------------------------------------------------------------
   ## Existing Gage Correction Section
