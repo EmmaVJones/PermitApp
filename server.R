@@ -7,12 +7,12 @@ source('global.R')
 
 
 # Upload GIS data here to avoid uploading it twice (if it were in the global.R file)
-Ecoregions <- readOGR('data','vaECOREGIONlevel3__proj84')
-Ecoregions@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
-Superbasins <- readOGR('data','VAsuperbasins_proj84')
-Superbasins@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
-huc8 <- readOGR('data','HUC8_wgs84')
-huc8@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+#Ecoregions <- readOGR('data','vaECOREGIONlevel3__proj84')
+#Ecoregions@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+#Superbasins <- readOGR('data','VAsuperbasins_proj84')
+#Superbasins@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+#huc8 <- readOGR('data','HUC8_wgs84')
+#huc8@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
 
 
 shinyServer(function(input, output, session) {
@@ -85,6 +85,10 @@ shinyServer(function(input, output, session) {
       NULL
     return(userGageSelection())
   })
+  
+  
+  
+  ## Stream Gage Statistics Tab ##
   
   ## Select all stats from gagestats table based on gageInfo site subset on next tab ##
   extraStats <- reactive({
@@ -194,27 +198,9 @@ shinyServer(function(input, output, session) {
   
   ## Save as reactive df to make app more stable ##
   gage1 <- reactive({values$gage1})
-    #gage1 <- values$gage1[,1:2]%>%mutate(date=as.character(Date))
-    #return(gage1)})
   gage2 <- reactive({values$gage2})
-    #gage2 <- values$gage2[,1:2]%>%mutate(date=as.character(Date))
-    #return(gage2)})
   gage3 <- reactive({values$gage3})
-    #gage3 <- values$gage3[,1:2]%>%mutate(date=as.character(Date))
-  #return(gage3)})
-  gage4 <- reactive({values$gage4
-    #gage4 <- values$gage4[,1:2]%>%mutate(date=as.character(Date))
-    #return(gage4)
-  })
-  
-  #output$gageDataPreview1 <- renderTable({head(gage1())})   
-  #output$testthis <- renderPrint({attributes(gage1())})
-  #output$gageDataPreview2 <- renderTable({head(gage1())}) 
-  #output$gageDataPreview3 <- renderTable({head(values$gage3)}) 
-  #output$gageDataPreview4 <- renderTable({head(values$gage4)}) 
-  
-  
-  
+  gage4 <- reactive({values$gage4})
   
   ## Calculate correlations ##
   corr <- reactive({
@@ -298,17 +284,24 @@ shinyServer(function(input, output, session) {
       return(NULL)
     # make a new df and change column names to common variable so can call in ggplot regardless of names
     dat <- finalGage()
+    str(finalGage())
     names(dat)[c(2,3)] <- c('StreamName',"GageName")
-    print(str(dat))
     
-    ggplotRegression(lm(StreamName ~ GageName,data=dat))+
-      scale_x_log10(breaks=seq(0,100,10),minor_breaks=seq(0,100,10))+
-      scale_y_log10(breaks=seq(0,100,10),minor_breaks=seq(0,100,10))
+    # Nonlinear model (power) on log10 transformed coordinate system
+    ggplot(dat,aes(x = GageName, y = StreamName)) + 
+      geom_point() + coord_trans(y = 'log',x = 'log')+#scale_x_log10() + scale_y_log10() #scale runs stats after transformation so it fails
+      geom_smooth(method = 'nls',formula = 'y ~  a * x ^ b',
+                  method.args=list(start=c(a=1,b=1)),se=F) +# predict.nls you can't use se for preditions and needs to be turned off for stat_smooth call
+      labs(x=paste('Gage: ',strsplit(names(finalGage()[3]),' ')[[1]][1]),
+           y=paste('User Data:',names(finalGage())[2]))
     
-    #ggplot(dat,aes(x=GageName,y=StreamName))+geom_point()+
-    #  stat_smooth(method = "lm", col = "red")+
+    
+    # Old linear regression on log scales
+    #ggplotRegression1(lm(StreamName ~ GageName,data=dat))+
     #  scale_x_log10(breaks=seq(0,100,10),minor_breaks=seq(0,100,10))+
     #  scale_y_log10(breaks=seq(0,100,10),minor_breaks=seq(0,100,10))
+    
+    
   })
   
   ## Flow Data table ##
@@ -320,10 +313,42 @@ shinyServer(function(input, output, session) {
                                         list(extend='excel',filename=paste('FlowFrequencyComparison_',paste(input$selectGageFromCorrelation, collapse = "_"),Sys.Date(),sep='')))))
   })
   
-  #output$testthis <- renderPrint({paste("1",strsplit(names(gage1())[2]," ")[[1]][1],
-  #                                      "2",strsplit(names(gage2())[2]," ")[[1]][2],
-  #                                      "3",strsplit(names(gage3())[2]," ")[[1]][2],
-   #                                     "4",strsplit(names(gage4())[2]," ")[[1]][2],sep=" ")}) 
+  
+  
+  
+  
+  ## Flow Frequency Adjustments ##
+  finalFlowStats <- reactive({inFile <- input$userFlowData
+   if(is.null(inFile) & is.null(finalGage()))
+     return(NULL)
+    stats <- subset(extraStats(),SITEID %in% as.character(input$selectGageFromCorrelation))%>%
+      select(X1Q10:HARMEAN)
+    stats <- as.data.frame(t(stats))
+    stats <- cbind(stats,rownames(stats))
+    names(stats) <- c('Value','Stat')
+    stats <- mutate(stats,adj=coefficients(fit)[1][[1]]*(Value^coefficients(fit)[2][[1]]))%>%
+      select(2,3,1)
+    names(stats) <- c('Flow Statistic',
+                      paste(names(finalGage())[2],' Value',sep=''),
+                      paste(strsplit(names(finalGage()[3]),' ')[[1]][1],' Value',sep=''))
+    
+    return(stats)
+  })
+  
+  
+  
+  output$flowFrequencies <- DT::renderDataTable({
+    datatable(finalFlowStats(),rownames = F,extensions = 'Buttons', escape=F,
+              options=list(dom='Bt',
+                           buttons=list('copy',
+                                        list(extend='csv',filename=paste('FlowFrequencyAdjustment_',paste(input$selectGageFromCorrelation, collapse = "_"),Sys.Date(),sep='')),
+                                        list(extend='excel',filename=paste('FlowFrequencyAdjustment_',paste(input$selectGageFromCorrelation, collapse = "_"),Sys.Date(),sep='')))))%>%
+      formatRound(columns=names(finalFlowStats())[c(2,3)],digits=2)
+  
+  })
+  
+  
+  
   
   #-------------------------------------------------------------------------------------------
   ## Existing Gage Correction Section
