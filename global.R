@@ -15,8 +15,12 @@ library(ggplot2)
 library(dataRetrieval)
 
 
+
+  
+
 ## Data
 template <- read.csv('data/template.csv')
+nibbs <- read.csv('data/NibbsCreek.csv')
 
 gageInfo <- readRDS('data/gageInfo.RDS')
 coordinates(gageInfo) <- ~LongDD+LatDD
@@ -169,4 +173,19 @@ ggplotRegression1 <- function (fit) {
                        "Intercept =",signif(fit$coef[[1]],5 ),
                        " Slope =",signif(fit$coef[[2]], 5),
                        " P =",signif(summary(fit)$coef[2,4], 5)))
+}
+
+
+
+wCDFplot <- function(metalsCDF_DataSelect){
+  req(metalsCDF_DataSelect)
+  m <- max(metalsCDF_DataSelect$NResp)
+  xaxis <- as.character(paste(capwords(tolower(metalsCDF_DataSelect$Indicator[1])),' (',metalsCDF_DataSelect$units[1],')'))
+  p <- ggplot(metalsCDF_DataSelect, aes(x=Value,y=Estimate.P)) + geom_point() + labs(x=xaxis,y="Percentile") +
+    ggtitle(as.character(paste(capwords(tolower(metalsCDF_DataSelect$Indicator[1])),'in \n',
+                               metalsCDF_DataSelect$Subpopulation[1],'\n (n=',m,')'))) + 
+    theme(plot.title = element_text(hjust=0.5,face='bold',size=15)) +
+    theme(axis.title = element_text(face='bold',size=12))+ 
+    geom_ribbon(data=metalsCDF_DataSelect,aes(ymin=LCB95Pct.P,ymax=UCB95Pct.P),alpha=0.3)
+  return(p)
 }

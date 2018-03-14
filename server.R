@@ -7,12 +7,15 @@ source('global.R')
 
 
 # Upload GIS data here to avoid uploading it twice (if it were in the global.R file)
-#Ecoregions <- readOGR('data','vaECOREGIONlevel3__proj84')
-#Ecoregions@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
-#Superbasins <- readOGR('data','VAsuperbasins_proj84')
-#Superbasins@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
-#huc8 <- readOGR('data','HUC8_wgs84')
-#huc8@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+Ecoregions <- readOGR('data','vaECOREGIONlevel3__proj84')
+Ecoregions@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+Superbasins <- readOGR('data','VAsuperbasins_proj84')
+Superbasins@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+huc8 <- readOGR('data','HUC8_wgs84')
+huc8@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+basins <- readOGR('data','VAbasins')
+basins@proj4string <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+
 
 
 shinyServer(function(input, output, session) {
@@ -72,8 +75,9 @@ shinyServer(function(input, output, session) {
   
   ## Use click info from map to subset gageInfo ##
   userGageSelection <- reactive({
-    if(is.null(input$gageList))
-      return(NULL)
+    req(input$gageList)
+    #if(is.null(input$gageList))
+    #  return(NULL)
     d <- subset(gageInfo@data,GageNo %in% input$gageList)
     names(d) <- c("Gage Number","Station Name","HUC8","Drainage Area","name2","WebAddress") 
     return(d[1:4,1:4])
@@ -81,8 +85,9 @@ shinyServer(function(input, output, session) {
   
   ## Display subset of gageInfo ##
   output$gageInfoTable <- renderTable({
-    if(is.null(userGageSelection()))
-      NULL
+    req(userGageSelection())
+    #if(is.null(userGageSelection()))
+    #  NULL
     return(userGageSelection())
   })
   
@@ -101,8 +106,9 @@ shinyServer(function(input, output, session) {
   
   ## Display all stats from gagestats table based on gageInfo site subset on next tab ##
   output$gageInfoTable2 <- renderTable({
-    if(is.null(extraStats()))
-      NULL
+    req(extraStats())
+    #if(is.null(extraStats()))
+    #  NULL
     return(extraStats())
   })
   
@@ -171,6 +177,11 @@ shinyServer(function(input, output, session) {
   output$downloadTemplate <- downloadHandler(filename = function(){'template.csv'},
                                              content=function(file){write.csv(template,file,row.names = F)})
   
+  ## Download Nibbs Cr Example Data ##
+  output$nibbsExample <- downloadHandler(filename = function(){'NibbsCrExample.csv'},
+                                             content=function(file){write.csv(nibbs,file,row.names = F)})
+  
+  
   ## Upload user flow data ##
   inputFile <- reactive({inFile <- input$userFlowData
   if(is.null(inFile))
@@ -179,8 +190,9 @@ shinyServer(function(input, output, session) {
   
   ## Combine gages pulled from USGS and user uploaded file ##
   gageDataCombined <- reactive({
-    if(is.null(inputFile()))
-      return(NULL)
+    req(inputFile())
+    #if(is.null(inputFile()))
+    #  return(NULL)
     dat <- inputFile()
     dat$Date <- as.Date(as.character(dat$Date))
     combine2 <- merge(dat,values$gage_data,by="Date")
@@ -204,8 +216,9 @@ shinyServer(function(input, output, session) {
   
   ## Calculate correlations ##
   corr <- reactive({
-    if(is.null(inputFile()))
-      return(NULL)
+    req(inputFile())
+    #if(is.null(inputFile()))
+    #  return(NULL)
     dat <- inputFile()
     dat$Date <- as.Date(as.character(dat$Date))
     
@@ -237,8 +250,9 @@ shinyServer(function(input, output, session) {
   
   ## Output Correlation data ##
   output$corrResult <- DT::renderDataTable({
-    if(is.null(inputFile()))
-      return(NULL)
+    req(inputFile())
+    #if(is.null(inputFile()))
+    #  return(NULL)
     datatable(corr(),rownames = F,extensions = 'Buttons', escape=F,
               options=list(dom='Bt',
                            buttons=list('copy',
@@ -260,8 +274,9 @@ shinyServer(function(input, output, session) {
   
   ## Selected gage ##
   finalGage <- reactive({
-    if(is.null(input$selectGageFromCorrelation) | input$selectGageFromCorrelation == " ")
-      return(NULL)
+    req(input$selectGageFromCorrelation)
+    #if(is.null(input$selectGageFromCorrelation) | input$selectGageFromCorrelation == " ")
+    #  return(NULL)
     #match data to selected gage
     if(length(gageDataCombined())>2){
       if(input$selectGageFromCorrelation == strsplit(names(gage1())[2]," ")[[1]][1]){finalgage <- gage1()}}
@@ -280,12 +295,14 @@ shinyServer(function(input, output, session) {
   
   ## Flow comparison plot ##
   output$flowRegressionPlot <- renderPlot({
-    if(is.null(input$selectGageFromCorrelation) | input$selectGageFromCorrelation == " ")
-      return(NULL)
+    req(input$selectGageFromCorrelation)
+    #if(is.null(input$selectGageFromCorrelation) | input$selectGageFromCorrelation == " ")
+    #  return(NULL)
     # make a new df and change column names to common variable so can call in ggplot regardless of names
     dat <- finalGage()
     str(finalGage())
     names(dat)[c(2,3)] <- c('StreamName',"GageName")
+    
     
     # Nonlinear model (power) on log10 transformed coordinate system
     ggplot(dat,aes(x = GageName, y = StreamName)) + 
@@ -304,6 +321,21 @@ shinyServer(function(input, output, session) {
     
   })
   
+  flowRegression <- reactive({
+    req(input$selectGageFromCorrelation)
+    #if(is.null(input$selectGageFromCorrelation) | input$selectGageFromCorrelation == " ")
+    #  return(NULL)
+    dat <- finalGage()
+    names(dat)[c(2,3)] <- c('StreamName',"GageName")
+    
+    return(nls(StreamName ~  a*GageName^b,dat,start= list(a=1,b=1)))
+  })
+  
+  ## Flow Regression Summary Statistics ##
+  output$flowRegressionSummary <- renderPrint({
+    summary(flowRegression())
+  })
+  
   ## Flow Data table ##
   output$flowData <- DT::renderDataTable({
     datatable(finalGage(),rownames = F,extensions = 'Buttons', escape=F,
@@ -319,20 +351,21 @@ shinyServer(function(input, output, session) {
   
   ## Flow Frequency Adjustments ##
   finalFlowStats <- reactive({inFile <- input$userFlowData
-   if(is.null(inFile) & is.null(finalGage()))
-     return(NULL)
-    stats <- subset(extraStats(),SITEID %in% as.character(input$selectGageFromCorrelation))%>%
+  req(inFile,finalGage()) 
+  #if(is.null(inFile) & is.null(finalGage()))
+   #  return(NULL)
+   stats <- subset(extraStats(),SITEID %in% as.character(input$selectGageFromCorrelation))%>%
       select(X1Q10:HARMEAN)
-    stats <- as.data.frame(t(stats))
-    stats <- cbind(stats,rownames(stats))
-    names(stats) <- c('Value','Stat')
-    stats <- mutate(stats,adj=coefficients(fit)[1][[1]]*(Value^coefficients(fit)[2][[1]]))%>%
-      select(2,3,1)
-    names(stats) <- c('Flow Statistic',
+   stats <- as.data.frame(t(stats))
+   stats <- cbind(stats,rownames(stats))
+   names(stats) <- c('Value','Stat')
+   stats <- mutate(stats,adj=coefficients(flowRegression())[1][[1]]*(Value^coefficients(flowRegression())[2][[1]]))%>%
+     select(2,3,1)
+   names(stats) <- c('Flow Statistic',
                       paste(names(finalGage())[2],' Value',sep=''),
                       paste(strsplit(names(finalGage()[3]),' ')[[1]][1],' Value',sep=''))
     
-    return(stats)
+   return(stats)
   })
   
   
@@ -390,8 +423,9 @@ shinyServer(function(input, output, session) {
   })
   
   output$adjustedFlowStats <- renderDataTable({
-    if(is.null(updatedFlowStats()))
-      return(NULL)
+    req(updatedFlowStats())
+    #if(is.null(updatedFlowStats()))
+    #  return(NULL)
     datatable(updatedFlowStats(),rownames = T,extensions = 'Buttons', escape=F,
               options=list(dom='Bt',
                            buttons=list('copy',
@@ -429,9 +463,24 @@ shinyServer(function(input, output, session) {
   ## Background Metals Weighted (Probmon Data) Section ##
   #-------------------------------------------------------------------------------------------
   output$weightedMap <- renderLeaflet({
-    leaflet(metalsSites) %>% addProviderTiles('Thunderforest.Landscape') %>%
+    leaflet(metalsSites) %>% 
+      addProviderTiles(providers$Thunderforest.Landscape,group='Thunderforest Landscape') %>%
+      addProviderTiles(providers$Esri.WorldImagery,group='Esri World Imagery')%>%
+      addProviderTiles(providers$OpenStreetMap,group='Open Street Map')%>%
       fitBounds(~min(LongitudeDD),~min(LatitudeDD),~max(LongitudeDD),~max(LatitudeDD))%>%
-      #fitBounds(metalsSites1@bbox)
+      addPolygons(data=Superbasins,color='blue',fill=0.9,stroke=0.1,group="Superbasins",
+                  popup=paste("Superbasin: ",Superbasins@data$NAME,sep="")) %>% hideGroup('Superbasins') %>%
+      addPolygons(data=basins,color='navy',fill=0.9,stroke=0.1,group="Basins",
+                  popup=paste("Basin: ",basins@data$BASIN,sep="")) %>% hideGroup('Basins') %>%
+      addPolygons(data=Ecoregions,color='grey',fill=0.9,stroke=0.1,group="Ecoregions",
+                  popup=paste("Ecoregion: ",Ecoregions@data$NAME,sep="")) %>% hideGroup('Ecoregions') %>%
+      addPolygons(data=huc8,color='orange',fill=0.9,stroke=0.1,group='HUC8',
+                  popup=paste(sep="<br/>",paste("HUC8: ",huc8@data$CU,sep=""),
+                              paste('Name: ',capwords(tolower(huc8@data$NAME)),sep=""))) %>% hideGroup('HUC8') %>%
+      addLayersControl(baseGroups=c('Thunderforest Landscape','Esri World Imagery','Open Street Map'),
+                       overlayGroups = c('Superbasins','Basins','Ecoregions','HUC8'),
+                       options=layersControlOptions(collapsed=T),
+                       position='topleft')%>%
       addMouseCoordinates()%>%#style='basic')%>%
       addHomeButton(extent(metalsSites1), "Virginia")
   })
@@ -447,8 +496,9 @@ shinyServer(function(input, output, session) {
   
   # Subset metals sites based on user metal and subpopulation #
   metalsSites_DataSelect <- reactive({
-    if(is.null(metalsCDF_DataSelect()))
-      return(NULL)
+    req(metalsCDF_DataSelect())
+    #if(is.null(metalsCDF_DataSelect()))
+    #  return(NULL)
     df <- filter(metalsSites_long,metal==toupper(input$metalToPlot))
     if(input$subpopToPlot=="Virginia")
       return(filter(df,category=='Basin'))
@@ -463,8 +513,9 @@ shinyServer(function(input, output, session) {
   
   # Population report section
   popsummaryVA <- reactive({
-    if(is.null(metalsCDF_DataSelect()))
-      return(NULL)
+    req(metalsCDF_DataSelect())
+    #if(is.null(metalsCDF_DataSelect()))
+    #  return(NULL)
     x <- filter(metalsCDF_DataSelectfortable(),Subpopulation=="Virginia")
     populationSummary(x,input$metalToPlot,"Virginia")
   })
@@ -491,8 +542,9 @@ shinyServer(function(input, output, session) {
     populationSummary(metalsCDF_DataSelect(),input$metalToPlot,input$order)
   })
   popsummaryALL <- reactive({
-    if(is.null(metalsCDF_DataSelect()))
-      return(NULL)
+    req(metalsCDF_DataSelect())
+    #if(is.null(metalsCDF_DataSelect()))
+    #  return(NULL)
     x <- popsummaryVA()
     if(input$basin!="-")
       x <- rbind(x,popsummarybasin())
@@ -509,8 +561,9 @@ shinyServer(function(input, output, session) {
   
   # Add markers to map based on user selection #
   observe({
-    if(is.null(metalsCDF_DataSelect()))
-      return(NULL)
+    req(metalsCDF_DataSelect())
+    #if(is.null(metalsCDF_DataSelect()))
+    #  return(NULL)
     pal <- colorQuantile(c("#FDFEC5","#FEAF56","#FF4A31","#830025"), metalsCDF_DataSelect()$Value,n=4)
     
     leafletProxy('weightedMap',data=metalsSites_DataSelect()) %>% clearMarkers() %>%
@@ -523,14 +576,18 @@ shinyServer(function(input, output, session) {
                                    paste(capwords(tolower(metalsSites_DataSelect()$metal)),":",
                                          metalsSites_DataSelect()$metal_value,
                                          unique(metalsCDF_DataSelect()$units),sep=" ")))%>%
+      addLayersControl(baseGroups=c('Thunderforest Landscape','Esri World Imagery','Open Street Map'),
+                       overlayGroups = c('Superbasins','Basins','Ecoregions','HUC8'),
+                       options=layersControlOptions(collapsed=T),position='topleft')%>%
       addLegend("bottomright",pal=pal,values=~metalsCDF_DataSelect()$Value,
                 title=paste(input$metalToPlot),opacity=1)
   })
   
   # Summary table of input dataset #
   output$weightedMetalsTable <- DT::renderDataTable({
-    if(is.null(popsummaryALL()))
-      return(NULL)
+    req(popsummaryALL())
+    #if(is.null(popsummaryALL()))
+    #  return(NULL)
     datatable(popsummaryALL(),
               colnames=c('Metal','Subpopulation','n','5%','10%','25%','50%','75%','90%','95%'),
               extensions = 'Buttons', escape=F, rownames = F,
@@ -549,7 +606,7 @@ shinyServer(function(input, output, session) {
   observeEvent(input$reviewstats,{
     showModal(modalDialog(
       title="Statistics for all metals (Preview)",
-      h5("For faster app rendering, this is just a preview  of your selected data.",
+      h5("For faster app rendering, this is just a preview  of your selected data.",br(),
          span(strong("Click the 'Send to Report' button to review the entire dataset."))),
       hr(),
       tableOutput('allstatstable'),
@@ -568,38 +625,62 @@ shinyServer(function(input, output, session) {
   
   
   # Subset data on user map click to highlight on CDF curve
-  marker <- reactive({
+  #marker <- reactive({
+  #  click <- input$weightedMap_marker_click
+  #  req(click)
+    #if(is.null(click))
+    #  return()
+  #  print(click$id)
+  #  return(click$id)
+  #})
+  
+  observeEvent(input$weightedMap_marker_click, { # update the weightedMetalsCDF on map clicks
     click <- input$weightedMap_marker_click
-    if(is.null(click))
-      return()
-    return(click$id)
+    print(paste(click$id,' ; ',input$metalToPlot))
+    if(!is.null(click$id)){
+      output$weightedMetalsCDF <- renderPlot({
+        p <- wCDFplot(metalsCDF_DataSelect())
+        xspot <- max(metalsCDF_DataSelect()$Value)*0.7
+        dat <- subset(metalsSites,StationID_Trend %in% as.character(click$id))%>%
+          select_(toupper(input$metalToPlot))
+        cdf <- select(metalsCDF_DataSelect(),Value,Estimate.P)
+        df <- data.frame(Value=dat[[1]],Estimate.P=vlookup(dat[[1]],cdf,2,TRUE))
+        return(p+geom_point(data=df,aes(x=Value,y=Estimate.P),color='orange',size=4)+
+                 annotate("text",label=paste(sep= "\n","Percentile Highlighted \nfor StationID:",click$id),
+                          x=xspot,y=10,hjust=0,vjust=0))})
+    }
   })
+  output$weightedMetalsCDF <- renderPlot({wCDFplot(metalsCDF_DataSelect())})
+
+  
   
   # Updating dissolved metals cdf plot
-  wCDFplot <- reactive({
-    if(is.null(metalsCDF_DataSelect()))
-      return(NULL)
-    m <- max(metalsCDF_DataSelect()$NResp)
-    xaxis <- as.character(paste(capwords(tolower(metalsCDF_DataSelect()$Indicator[1])),' (',metalsCDF_DataSelect()$units[1],')'))
-    p <- ggplot(metalsCDF_DataSelect(), aes(x=Value,y=Estimate.P)) + geom_point() + labs(x=xaxis,y="Percentile") +
-      ggtitle(as.character(paste(capwords(tolower(metalsCDF_DataSelect()$Indicator[1])),'in \n',
-                                 metalsCDF_DataSelect()$Subpopulation[1],'\n (n=',m,')'))) + 
-      theme(plot.title = element_text(hjust=0.5,face='bold',size=15)) +
-      theme(axis.title = element_text(face='bold',size=12))+ 
-      geom_ribbon(data=metalsCDF_DataSelect(),aes(ymin=LCB95Pct.P,ymax=UCB95Pct.P),alpha=0.3)
-    if(is.null(marker())){
-      return(p)
-    }else{
-      xspot <- max(metalsCDF_DataSelect()$Value)*0.7
-      dat <- subset(metalsSites,StationID_Trend %in% as.character(marker()))%>%
-        select_(toupper(input$metalToPlot))
-      cdf <- select(metalsCDF_DataSelect(),Value,Estimate.P)
-      df <- data.frame(Value=dat[[1]],Estimate.P=vlookup(dat[[1]],cdf,2,TRUE))
-      return(p+geom_point(data=df,aes(x=Value,y=Estimate.P),color='orange',size=4)+
-               annotate("text",label=paste(sep= "\n","Percentile Highlighted \nfor StationID:",marker()),
-                        x=xspot,y=10,hjust=0,vjust=0))}
-  })
-  output$weightedMetalsCDF <- renderPlot({wCDFplot()})
+  #wCDFplot <- reactive({
+  #  req(metalsCDF_DataSelect())
+  #  m <- max(metalsCDF_DataSelect()$NResp)
+  #  xaxis <- as.character(paste(capwords(tolower(metalsCDF_DataSelect()$Indicator[1])),' (',metalsCDF_DataSelect()$units[1],')'))
+  #  p <- ggplot(metalsCDF_DataSelect(), aes(x=Value,y=Estimate.P)) + geom_point() + labs(x=xaxis,y="Percentile") +
+  #    ggtitle(as.character(paste(capwords(tolower(metalsCDF_DataSelect()$Indicator[1])),'in \n',
+  #                               metalsCDF_DataSelect()$Subpopulation[1],'\n (n=',m,')'))) + 
+  #    theme(plot.title = element_text(hjust=0.5,face='bold',size=15)) +
+  #    theme(axis.title = element_text(face='bold',size=12))+ 
+  #    geom_ribbon(data=metalsCDF_DataSelect(),aes(ymin=LCB95Pct.P,ymax=UCB95Pct.P),alpha=0.3)
+    #if(is.null(marker())){
+  #    return(p)
+    #}else{
+    #validate(req(marker2$x)) # changed as well
+    #  xspot <- max(metalsCDF_DataSelect()$Value)*0.7
+    #  dat <- subset(metalsSites,StationID_Trend %in% as.character(marker()))%>%
+    #    select_(toupper(input$metalToPlot))
+    #  cdf <- select(metalsCDF_DataSelect(),Value,Estimate.P)
+    #  df <- data.frame(Value=dat[[1]],Estimate.P=vlookup(dat[[1]],cdf,2,TRUE))
+    #  return(p+geom_point(data=df,aes(x=Value,y=Estimate.P),color='orange',size=4)+
+    #           annotate("text",label=paste(sep= "\n","Percentile Highlighted \nfor StationID:",marker()),
+    #                    x=xspot,y=10,hjust=0,vjust=0))
+ # })
+  
+  #output$test <- renderPrint({p})
+  #output$weightedMetalsCDF <- renderPlot({wCDFplot(metalsCDF_DataSelect())})
   
   ##---------------------------------------RMARKDOWN SECTION----------------------------------------------
   
@@ -623,26 +704,55 @@ shinyServer(function(input, output, session) {
   
   output$unweightedMap <- renderLeaflet({
     if(input$targetlocationUN==""){
-      leaflet() %>% addProviderTiles('Thunderforest.Landscape') %>%
-        addMouseCoordinates()%>%#style='basic')%>%
-        addHomeButton(extent(metalsSites1), "Virginia")%>%
+      leaflet() %>% addProviderTiles(providers$Thunderforest.Landscape,group='Thunderforest Landscape') %>%
+        addProviderTiles(providers$Esri.WorldImagery,group='Esri World Imagery')%>%
+        addProviderTiles(providers$OpenStreetMap,group='Open Street Map')%>%
+        addPolygons(data=Superbasins,color='blue',fill=0.9,stroke=0.1,group="Superbasins",
+                    popup=paste("Superbasin: ",Superbasins@data$NAME,sep="")) %>% hideGroup('Superbasins') %>%
+        addPolygons(data=Ecoregions,color='grey',fill=0.9,stroke=0.1,group="Ecoregions",
+                    popup=paste("Ecoregion: ",Ecoregions@data$NAME,sep="")) %>% hideGroup('Ecoregions') %>%
+        addPolygons(data=huc8,color='orange',fill=0.9,stroke=0.1,group='HUC8',
+                    popup=paste(sep="<br/>",paste("HUC8: ",huc8@data$CU,sep=""),
+                                paste('Name: ',capwords(tolower(huc8@data$NAME)),sep=""))) %>% hideGroup('HUC8') %>%
         addCircleMarkers(data=metalsSites1,radius=6,
                          color=~'black',stroke=F,fillOpacity=0.5,
                          group='selectedSites_UN',layerId=~StationID_Trend,
                          popup=popupTable(metalsSites1, zcol = c("StationID","Year","StationID_Trend","CALCIUM","MAGNESIUM","ARSENIC","BARIUM",         
                                                                  "BERYLLIUM","CADMIUM","CHROMIUM","COPPER","IRON","LEAD","MANGANESE","THALLIUM",
-                                                                 "NICKEL","SILVER","ZINC","ANTIMONY","ALUMINUM","SELENIUM","HARDNESS","MERCURY")))
+                                                                 "NICKEL","SILVER","ZINC","ANTIMONY","ALUMINUM","SELENIUM","HARDNESS","MERCURY"))) %>%
+        addLayersControl(baseGroups=c('Thunderforest Landscape','Esri World Imagery','Open Street Map'),
+                         overlayGroups = c('Superbasins','Ecoregions','HUC8'),
+                         options=layersControlOptions(collapsed=T),
+                         position='topleft')%>%
+        addMouseCoordinates()%>%#style='basic')%>%
+        addHomeButton(extent(metalsSites1), "Virginia")
     }else{
       target_pos = geocode(input$targetlocationUN)
       
-      leaflet()%>%addProviderTiles('Thunderforest.Landscape')%>%addMouseCoordinates()%>%#style='basic')%>%
+      leaflet()%>%
+        addProviderTiles(providers$Thunderforest.Landscape,group='Thunderforest Landscape') %>%
+        addProviderTiles(providers$Esri.WorldImagery,group='Esri World Imagery')%>%
+        addProviderTiles(providers$OpenStreetMap,group='Open Street Map')%>% 
         setView(lng=target_pos$lon,lat=target_pos$lat,zoom=10)%>%
+        addPolygons(data=Superbasins,color='blue',fill=0.9,stroke=0.1,group="Superbasins",
+                    popup=paste("Superbasin: ",Superbasins@data$NAME,sep="")) %>% hideGroup('Superbasins') %>%
+        addPolygons(data=Ecoregions,color='grey',fill=0.9,stroke=0.1,group="Ecoregions",
+                    popup=paste("Ecoregion: ",Ecoregions@data$NAME,sep="")) %>% hideGroup('Ecoregions') %>%
+        addPolygons(data=huc8,color='orange',fill=0.9,stroke=0.1,group='HUC8',
+                    popup=paste(sep="<br/>",paste("HUC8: ",huc8@data$CU,sep=""),
+                                paste('Name: ',capwords(tolower(huc8@data$NAME)),sep=""))) %>% hideGroup('HUC8') %>%
         addCircleMarkers(data=metalsSites1,radius=6,
                          color=~'black',stroke=F,fillOpacity=0.5,
                          group='selectedSites_UN',layerId=~StationID_Trend,
                          popup=popupTable(metalsSites1, zcol = c("StationID","Year","StationID_Trend","CALCIUM","MAGNESIUM","ARSENIC","BARIUM",         
                                                                  "BERYLLIUM","CADMIUM","CHROMIUM","COPPER","IRON","LEAD","MANGANESE","THALLIUM",
-                                                                 "NICKEL","SILVER","ZINC","ANTIMONY","ALUMINUM","SELENIUM","HARDNESS","MERCURY")))
+                                                                 "NICKEL","SILVER","ZINC","ANTIMONY","ALUMINUM","SELENIUM","HARDNESS","MERCURY"))) %>%
+        addLayersControl(baseGroups=c('Thunderforest Landscape','Esri World Imagery','Open Street Map'),
+                         overlayGroups = c('Superbasins','Ecoregions','HUC8'),
+                         options=layersControlOptions(collapsed=T),
+                         position='topleft')%>%
+        addMouseCoordinates()%>%#style='basic')%>%
+        addHomeButton(extent(metalsSites1), "Virginia")
     }
   })
   
@@ -683,23 +793,23 @@ shinyServer(function(input, output, session) {
     
   })
   
-  ## Add polygons ##
-  observe({if(input$supaBshape==T){
-    leafletProxy('unweightedMap')%>%
-      addPolygons(data=Superbasins,color='blue',fill=0.9,stroke=0.1,group="Superbasins_",
-                  popup=paste("Superbasin: ",Superbasins@data$NAME,sep=""))}else(leafletProxy('unweightedMap')%>%clearGroup("Superbasins_"))})
   
-  observe({if(input$ecoshape==T){
-    leafletProxy('unweightedMap')%>%
-      addPolygons(data=Ecoregions,color='grey',fill=0.9,stroke=0.1,group="Ecoregions_",
-                  popup=paste("Ecoregion: ",Ecoregions@data$NAME,sep=""))}else(leafletProxy('unweightedMap')%>%clearGroup("Ecoregions_"))})
   
-  observe({if(input$hucshape==T){
-    leafletProxy('unweightedMap')%>%
-      addPolygons(data=huc8,color='orange',fill=0.9,stroke=0.1,group="huc_",
-                  popup=paste(sep="<br/>",paste("HUC8: ",huc8@data$CU,sep=""),
-                              paste('Name: ',capwords(tolower(huc8@data$NAME)),sep="")))}else(leafletProxy('unweightedMap')%>%clearGroup("huc_"))})
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+   
   
   ## grey out runStats button until both fields are filled in ##
   observe({
@@ -713,8 +823,9 @@ shinyServer(function(input, output, session) {
   basin <- eventReactive(input$runStats,{
     geogsub(input$facilityUN,Superbasins,input$metalToPlotUN)})
   output$basinTable <- DT::renderDataTable({
-    if(is.null(basin()))
-      return(NULL)
+    req(basin())
+    #if(is.null(basin()))
+    #  return(NULL)
     datatable(basin(),
               extensions = 'Buttons', escape=F, rownames = F,
               options=list(dom='Bt',
@@ -726,8 +837,9 @@ shinyServer(function(input, output, session) {
     x <- geogsub(input$facilityUN,Ecoregions,input$metalToPlotUN)
     if(nrow(x)>0){return(x%>%dplyr::rename(Ecoregion=Watershed))}else{return(x)}})
   output$ecoTable <- DT::renderDataTable({
-    if(is.null(eco()))
-      return(NULL)
+    req(eco())
+    #if(is.null(eco()))
+    #  return(NULL)
     datatable(eco(),
               extensions = 'Buttons', escape=F, rownames = F,
               options=list(dom='Bt',
@@ -738,8 +850,9 @@ shinyServer(function(input, output, session) {
   huc <- eventReactive(input$runStats,{
     geogsub(input$facilityUN,huc8,input$metalToPlotUN)})
   output$huc8Table <- DT::renderDataTable({
-    if(is.null(huc()))
-      return(NULL)
+    req(huc())
+    #if(is.null(huc()))
+    #  return(NULL)
     datatable(huc(),
               extensions = 'Buttons', escape=F, rownames = F,
               options=list(dom='Bt',
@@ -752,8 +865,9 @@ shinyServer(function(input, output, session) {
   
   # All Stats Summary table #
   allstatsUN <- reactive({
-    if(is.null(basin()))
-      return(NULL)
+    req(basin())
+    #if(is.null(basin()))
+    #  return(NULL)
     basin1 <- basin()$Watershed[1]
     eco1 <- eco()$Ecoregion[1]
     huc1 <- huc()$Watershed[1]
@@ -765,8 +879,9 @@ shinyServer(function(input, output, session) {
   
   # Facility location for output report #
   facilityloc <- reactive({
-    if(is.null(input$facilityUN))
-      return(NULL)
+    req(input$facilityUN)
+    #if(is.null(input$facilityUN))
+    #  return(NULL)
     lat <- as.numeric(gsub(" ","",strsplit(input$facilityUN,",")[[1]][1]))
     lng <- as.numeric(gsub(" ","",strsplit(input$facilityUN,",")[[1]][2]))
     return(paste(lat,lng,sep=' , '))
@@ -785,7 +900,7 @@ shinyServer(function(input, output, session) {
   observeEvent(input$reviewstatsUN,{
     showModal(modalDialog(
       title="Statistics for all metals (Preview)",
-      h5("For faster app rendering, this is just a preview  of your selected data.",
+      h5("For faster app rendering, this is just a preview  of your selected data.",br(),
          span(strong("Click the 'Send to Report' button to review the entire dataset."))),
       hr(),
       tableOutput('allstatstableUN'),

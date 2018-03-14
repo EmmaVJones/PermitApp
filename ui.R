@@ -6,6 +6,15 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                   withMathJax(),
                   shinyjs::useShinyjs(),
                   navbarPage('VDEQ Permit Tool',
+                             tabPanel('About',fluidRow(column(10,
+                                                              h5("This tool was created to assist VDEQ staff in the permit review process."),
+                                                              p("All flow freqency results are placeholders at present.",
+                                                                span(strong('DO NOT INCLUDE FLOW FREQUENCY RESULTS IN ANY OFFICIAL PERMIT UNTIL OFFICIAL
+                                                                            APPLICATION PUBLICATION.')),"Background metals data are from 2001-2014."),
+                                                              br(),
+                                                              p('Better app description to follow in final release.'),
+                                                              br(),br(),
+                                                              p('Please contact Emma Jones for any application troubleshooting. Emma.jones@deq.virginia.gov')))),
                              navbarMenu("Flow Analysis",
                                         tabPanel("Existing Facility: Update Stream Gage Statistics",
                                                  h5(strong('Instructions')),
@@ -74,7 +83,8 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                                                  output correlation coefficients among the target stream and all other selected streams. 
                                                                                  Make sure you follow the template. Click the 'Download Template' button to ensure your file
                                                                                  is in the correct format prior to uploading it to the app."),
-                                                                               downloadButton('downloadTemplate',"Download template.csv"),
+                                                                               fluidRow(downloadButton('downloadTemplate',"Download template.csv"),
+                                                                                        downloadButton('nibbsExample','Download Nibbs Creek Example Data')),
                                                                                fileInput('userFlowData',"Upload single site (flat file)",accept = '.csv',width='50%')
                                                                                ),
                                                                         column(4,DT::dataTableOutput('corrResult'),
@@ -96,7 +106,9 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                             ),
                                                    tabPanel("Flow Frequency Analysis",
                                                             h4('Gage vs uploaded flow data regression'),
-                                                            column(8,plotOutput('flowRegressionPlot')),
+                                                            fluidRow(column(8,plotOutput('flowRegressionPlot')),
+                                                                     column(4,h5('Regression Statistics'),
+                                                                       verbatimTextOutput('flowRegressionSummary'))),
                                                             fluidRow(
                                                               column(6,
                                                                      h4("Flow Data"),
@@ -141,19 +153,20 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                                               Use the drop down on the map to adjust the metal and subpopulation plotted on the map. You can click the markers 
                                                                               to find out more information about each data point. Review the associated summary statistics table below and 
                                                                               cdf curve to the right. You can specify multiple subpopulations that characterize your site in the table below to 
-                                                                              review different statistical summaries simultaneously and copy or download them for future use."),
-                                                                            fluidRow(column(6,
-                                                                                            helpText('When you have selected the populations you want to review below, click
-                                                                                                     the button to the right to see all (weighted) metal statistics in one table. You can
-                                                                                                     download a report of all (weighted) metals statistics from that dialogue box.')),
-                                                                                     column(6,actionButton('reviewstats',"Review Statistics for all metals",class='btn-block')))
+                                                                              review different statistical summaries simultaneously and copy or download them for future use.")
+                                                                            
                                                                             ),
                                                                      column(5,
                                                                             h5(strong('CDF Curve')),
-                                                                            plotOutput('weightedMetalsCDF', height="300px"))
-                                                                            ),
+                                                                            plotOutput('weightedMetalsCDF', height="300px"))),
+                                                                   hr(),verbatimTextOutput('test'),
                                                                    column(12,
                                                                           h5(strong("Statistical Summary")),
+                                                                          fluidRow(column(6,
+                                                                                          helpText('When you have selected the populations you want to review below, click
+                                                                                                     the button to the right to see all (weighted) metal statistics in one table. You can
+                                                                                                     download a report of all (weighted) metals statistics from that dialogue box.')),
+                                                                                   column(6,actionButton('reviewstats',"Review Statistics for all metals",class='btn-block'))),
                                                                           fluidRow(column(3,selectInput('basin',"Choose a Basin",
                                                                                                         choices = c("-","Big Sandy","Chowan","Holston","James","New",
                                                                                                                     "Potomac","Rappahannock","Roanoke","Shenandoah","York"))),
@@ -179,10 +192,10 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                                                           and represent the extent of monitored sites statewide.'))),
                                                                    leafletOutput("unweightedMap"),
                                                                    absolutePanel(top=150, left=60, draggable = F,bottom="auto",height=80,width=205,
-                                                                                 textInput('targetlocationUN',"Search by Location",placeholder="Example: 37.564, -79.045"),
-                                                                                 wellPanel(checkboxInput('supaBshape','Plot Superbasins',value=F),
-                                                                                           checkboxInput('ecoshape','Plot Ecoregions',value=F),
-                                                                                           checkboxInput('hucshape','Plot HUC8 Watersheds',value=F),style='padding: 3px;')),
+                                                                                 textInput('targetlocationUN',"Search by Location",placeholder="Example: 37.564, -79.045")),
+                                                                                 #wellPanel(checkboxInput('supaBshape','Plot Superbasins',value=F),
+                                                                                  #         checkboxInput('ecoshape','Plot Ecoregions',value=F),
+                                                                                   #        checkboxInput('hucshape','Plot HUC8 Watersheds',value=F),style='padding: 3px;')),
                                                                    column(11,
                                                                           p("Use this section to help analyze background metals data for inclusion in forthcoming faciliy permit. 
                                                                             Type the facility's",strong("latitude")," and ",strong("longitude")," into the input box to add a marker 
@@ -202,23 +215,16 @@ shinyUI(fluidPage(theme = "yeti.css", #sandstone #slate good until final DT outp
                                                                                             br(),br(),
                                                                                             actionButton('reviewstatsUN',"Review Statistics for all metals",class='btn-block'))),
                                                                             br(),br(),
-                                                                            fluidRow(column(3,h6(strong('Basin Statistics'))),
+                                                                            fluidRow(column(3,h6(strong('Superbasin Statistics'))),
                                                                                      column(9,DT::dataTableOutput('basinTable'))),br(),br(),
                                                                             fluidRow(column(3,h6(strong('Ecoregion Statistics'))),
                                                                                      column(9,DT::dataTableOutput('ecoTable'))),br(),br(),
                                                                             fluidRow(column(3,h6(strong('HUC8 Statistics'))),
                                                                                      column(9,DT::dataTableOutput('huc8Table')))
-                                                                          )
-                                                                          
-                                                                          )))
-                                                                   )
-                                                 ),
-                             tabPanel('About',fluidRow(column(10,
-                                                              h5("This tool was created to assist VDEQ  staff in the permit review process."),
-                                                              p("Other stuff.")))),
+                                                                          )))))
+                                        #tabPanel(HTML(" </a></li><li><a href=\'https://enviromapper.us/shiny/'>| Shiny Homepage |"))
+                                                 )
+                             ))
                              
-                             tabPanel(HTML(" </a></li><li><a href=\'https://enviromapper.us/shiny/'>| Shiny Homepage |"))
-                             
-                                                   )
-                                                            )
-                             )
+                            
+)

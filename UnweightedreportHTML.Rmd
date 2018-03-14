@@ -1,0 +1,16 @@
+---
+title: "Background Metals Analysis (Weighted)"
+output: html_document
+params: 
+  table_allstatsUN: 'NULL'
+  facilitylocation: 'NULL'
+---
+
+### All statistics (Unweighted Data)
+#### Facility Location: `r params[['facilitylocation']]`
+```{r,echo=F}
+DT::datatable(params[['table_allstatsUN']],rownames = F,
+              colnames=c('Metal','Population','n','5%','10%','25%','50%','75%','90%','95%'),
+              options=list(dom='t',
+                           pageLength=nrow(params[['table_allstatsUN']])))
+```
